@@ -30,11 +30,19 @@ class OCRDataLoader(object):
 
         self.letters = self.read_letters()
         print('Done initialization!')
+        print('Number of characters:', len(self.letters))
 
     def read_letters(self):
         with open(self.get_data_path(self.config.data.vocab_path), 'r') as f:
             data = json.load(f)
-        return list(data.values())
+
+        letters = set(data.values())
+        # add letters not in vocab files
+        for label in self.labels:
+            for char in label:
+                if char not in letters:
+                    letters.add(char)
+        return list(letters)
 
     def get_data_path(self, path):
         return os.path.join('../' + self.config.data.root, path)
@@ -109,5 +117,6 @@ class OCRDataLoader(object):
 if __name__ == '__main__':
     from utils.config import process_config
     config = process_config('../configs/config.json')
-    dataloader = OCRDataLoader(config, 32, 64, 50)
+    dataloader = OCRDataLoader(config, 32, 64, 64, phase="train")
+
     print(next(dataloader.next_batch())[0]['the_labels'])
