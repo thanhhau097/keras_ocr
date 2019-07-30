@@ -3,13 +3,13 @@ from keras.applications.mobilenet import MobileNet
 
 class MobileNetEncoder():
     def __init__(self):
-        self.downsample_factor = 16
+        self.downsample_factor = 8
         # each model will have one down sample factor
 
     def __call__(self, input_tensor, *args, **kwargs):
         model = MobileNet(input_tensor=input_tensor)
-        model.summary()
-        inner = model.layers[-20].output
+        # model.summary()
+        inner = model.layers[36].output
         return inner, self.downsample_factor
 
 if __name__ == '__main__':
