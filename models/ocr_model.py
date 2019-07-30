@@ -3,30 +3,34 @@ from base.base_model import BaseModel
 from keras.models import Model
 from keras.layers import *
 from models.encoders.simple_encoder import SimpleEncoder
+from models.encoders.mobilenet_encoder import MobileNetEncoder
 from models.decoders.simple_decoder import SimpleDecoder
 
 
 class OCRModel(BaseModel):
     def __init__(self, config):
         super(OCRModel, self).__init__(config)
+        self.config = config
         self.build_model()
 
     def build_model(self):
-        input_shape = (128, 64, 1)  # (128, 64, 1)
+        input_shape = (None, 64, 3)
 
-        # Make Networkw
+        # Make Network
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
 
         # ENCODER
-        encoder = SimpleEncoder()
-        inner = encoder(inputs)
+        encoder = MobileNetEncoder()
+        inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 
         # CNN to RNN
         shape = inner.shape
-        target_shape = (int(shape[1]), int(shape[2] * shape[3]))
+        target_shape = (-1, int(shape[2] * shape[3]))
         inner = Reshape(target_shape=target_shape, name='reshape')(inner)  # (None, 32, 2048)
         inner = Dense(256, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, 32, 64)
+        # inner = Permute((2, 1, 3), name='permute')(inner)
+        # inner = TimeDistributed(Flatten(), name='timedistrib')(inner)
         print("After CNN to RNN:", inner)
 
         # DECODER
@@ -35,26 +39,36 @@ class OCRModel(BaseModel):
         print("After Decoder:", inner)
 
         # transforms RNN output to character activations:
-        num_classes = 100
-        inner = Dense(num_classes, kernel_initializer='he_normal', name='dense2')(lstm2_merged)  # (None, 32, 63)
+        num_classes = 4740
+        inner = Dense(num_classes, kernel_initializer='he_normal', name='dense2')(inner)  # (None, 32, 63)
         y_pred = Activation('softmax', name='softmax')(inner)
 
-        max_text_len = 100
+        max_text_len = self.config.hyperparameter.max_text_len
         labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')  # (None ,8)
         input_length = Input(name='input_length', shape=[1], dtype='int64')  # (None, 1)
         label_length = Input(name='label_length', shape=[1], dtype='int64')  # (None, 1)
 
         # Keras doesn't currently support loss funcs with extra parameters
         # so CTC loss is implemented in a lambda layer
-        loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')(
-            [y_pred, labels, input_length, label_length])  # (None, 1)
+        loss_out = Lambda(
+            ctc_lambda_func, output_shape=(1,),
+            name='ctc')([y_pred, labels, input_length, label_length])
 
         # if training:
-        model =  Model(inputs=[inputs, labels, input_length, label_length], outputs=loss_out)
+        self.model = Model(inputs=[inputs, labels, input_length, label_length],
+                           outputs=loss_out)
         # else:
         #     return Model(inputs=[inputs], outputs=y_pred)
 
+        self.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred},
+                      optimizer=self.config.model.optimizer)
+        self.model.summary()
+
+    def get_downsample_factor(self):
+        return self.downsample_factor
 
 
 if __name__ == '__main__':
-    model = OCRModel(config={})
+    from utils.config import process_config
+    config = process_config('../configs/config.json')
+    model = OCRModel(config=config)

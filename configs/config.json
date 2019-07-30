@@ -8,7 +8,8 @@
   "model": {
     "name": "ocr_model.OCRModel",
     "learning_rate": 0.001,
-    "optimizer": "adam"
+    "optimizer": "adam",
+    "input_length": 64
   },
   "trainer": {
     "name": "ocr_trainer.OCRTrainer",
@@ -35,5 +36,8 @@
   "image": {
     "max_height": 64,
     "channels": 3
+  },
+  "hyperparameter": {
+    "max_text_len": 128
   }
 }

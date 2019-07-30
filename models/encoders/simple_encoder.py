@@ -4,7 +4,8 @@ from keras.models import Model
 
 class SimpleEncoder():
     def __init__(self):
-        pass
+        self.downsample_factor = 4
+        # each model will have one down sample factor
 
     def __call__(self, input_tensor, *args, **kwargs):
         inner = Conv2D(64, (3, 3), padding='same', name='conv1', kernel_initializer='he_normal')(
@@ -43,4 +44,4 @@ class SimpleEncoder():
         inner = BatchNormalization()(inner)
         inner = Activation('relu')(inner)
 
-        return inner
+        return inner, self.downsample_factor

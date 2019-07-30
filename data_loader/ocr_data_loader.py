@@ -8,11 +8,10 @@ import numpy as np
 
 
 class OCRDataLoader(object):
-    def __init__(self, config, batch_size, len_output, max_text_len, phase='train'):
+    def __init__(self, config, phase='train'):
         self.config = config
-        self.batch_size = batch_size
-        self.len_output = len_output
-        self.max_text_len = max_text_len
+        self.batch_size = self.config.trainer.batch_size
+        self.max_text_len = self.config.hyperparameter.max_text_len
         self.max_height = self.config.image.max_height
         self.channels = self.config.image.channels
 
@@ -45,7 +44,7 @@ class OCRDataLoader(object):
         return list(letters)
 
     def get_data_path(self, path):
-        return os.path.join('../' + self.config.data.root, path)
+        return os.path.join(self.config.data.root, path)
 
     def get_image_paths_and_labels(self, json_path):
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -63,7 +62,7 @@ class OCRDataLoader(object):
         shape = image.shape
         if shape[0] > 64 or shape[0] < 32: # height
             image = cv2.resize(image, (int(64/shape[0] * shape[1]), 64))
-        return image
+        return image / 255.0
 
     def next_sample(self):
         pass
@@ -75,7 +74,6 @@ class OCRDataLoader(object):
                 max_width = 0
                 images = []
                 labels = np.ones([self.batch_size, self.max_text_len], dtype=np.int)
-                input_length = np.ones((self.batch_size, 1)) * (self.len_output - 2)
                 label_length = np.zeros((self.batch_size, 1))
 
                 for j in range(i * self.batch_size, (i + 1) * self.batch_size):
@@ -95,8 +93,12 @@ class OCRDataLoader(object):
 
                     if img.shape[1] > max_width:
                         max_width = img.shape[1]
+                # if max_width < 1024:
+                #     max_width = 1024
 
                 images = self.process_batch_images(images, max_width)
+                images = np.transpose(images, [0, 2, 1, 3])
+                input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
                 inputs = {
                     'the_input': images,  # (bs, w, h, 1)
                     'the_labels': labels,  # (bs, 8)
@@ -104,19 +106,20 @@ class OCRDataLoader(object):
                     'label_length': label_length  # (bs, 1)
                 }
                 outputs = {'ctc': np.zeros([self.batch_size])}  # (bs, 1) -> 모든 원소 0
+                # print("images shape:", images.shape, "input_length:", list(input_length))
                 yield (inputs, outputs)
 
     def process_batch_images(self, images, max_width):
-        output = np.zeros([self.batch_size, self.max_height, max_width, self.channels])
+        output = np.ones([self.batch_size, self.max_height, max_width, self.channels])
         for i, image in enumerate(images):
             shape = image.shape
             output[i, :shape[0], :shape[1], :] = image
         return output
 
 
-if __name__ == '__main__':
-    from utils.config import process_config
-    config = process_config('../configs/config.json')
-    dataloader = OCRDataLoader(config, 32, 64, 64, phase="train")
-
-    print(next(dataloader.next_batch())[0]['the_labels'])
+# if __name__ == '__main__':
+#     from utils.config import process_config
+#     config = process_config('../configs/config.json')
+#     dataloader = OCRDataLoader(config, phase="train")
+#
+#     print(next(dataloader.next_batch())[0]['the_labels'])
