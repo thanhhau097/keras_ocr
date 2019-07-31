@@ -32,6 +32,7 @@ def main():
 
     print('Start training the model.')
     trainer.train()
+    # test
 
 
 if __name__ == '__main__':
