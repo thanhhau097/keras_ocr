@@ -27,14 +27,6 @@ def main():
     print('Create the data generator.')
     data_loader = OCRDataLoader(config)
 
-    # data = next(data_loader.next_batch())[0]
-    # images = data['the_input']
-    # print(len(images))
-    # from matplotlib import pyplot as plt
-    # for i in range(16):
-    #     plt.imshow(images[i])
-    #     plt.show()
-
     print('Create the trainer')
     trainer = OCRTrainer(model.model, data_loader, config)
 
