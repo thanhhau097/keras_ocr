@@ -14,6 +14,7 @@ class OCRDataLoader(object):
         self.max_text_len = self.config.hyperparameter.max_text_len
         self.max_height = self.config.image.max_height
         self.channels = self.config.image.channels
+        self.phase = phase
 
         if phase == 'train':
             data_json_path = self.get_data_path(self.config.data.train_json_path)
@@ -27,7 +28,16 @@ class OCRDataLoader(object):
         self.image_paths, self.labels = self.get_image_paths_and_labels(data_json_path)
         self.n = len(self.image_paths)
 
-        self.letters = self.read_letters()
+        # to make sure that all characters are in vocabulary
+        if phase == 'train':
+            _, self.val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
+        else:
+            self.val_labels = []
+
+        if phase == 'train':
+            self.letters = self.read_letters()
+        else:
+            self.letters = config.letters
         print('Done initialization!')
         print('Number of characters:', len(self.letters))
 
@@ -37,11 +47,14 @@ class OCRDataLoader(object):
 
         letters = set(data.values())
         # add letters not in vocab files
-        for label in self.labels:
+        for label in (self.labels + self.val_labels):
             for char in label:
                 if char not in letters:
                     letters.add(char)
         return list(letters)
+
+    def get_steps(self):
+        return self.n // self.batch_size
 
     def get_data_path(self, path):
         return os.path.join(self.config.data.root, path)
@@ -87,6 +100,7 @@ class OCRDataLoader(object):
                     img = self.process_image(image=img)
                     images.append(img)
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
+                    # if self.phase == 'train':
                     label = text_to_labels(self.labels[j], letters=self.letters)
                     labels[j - i * self.batch_size, :len(label)] = label
                     label_length[j - i * self.batch_size] = len(self.labels[j])

@@ -39,7 +39,7 @@ class OCRModel(BaseModel):
         print("After Decoder:", inner)
 
         # transforms RNN output to character activations:
-        num_classes = 4740
+        num_classes = 4757
         inner = Dense(num_classes, kernel_initializer='he_normal', name='dense2')(inner)  # (None, 32, 63)
         y_pred = Activation('softmax', name='softmax')(inner)
 
@@ -53,6 +53,9 @@ class OCRModel(BaseModel):
         loss_out = Lambda(
             ctc_lambda_func, output_shape=(1,),
             name='ctc')([y_pred, labels, input_length, label_length])
+
+        # test function
+        self.test_func = K.function([inputs], [y_pred])
 
         # if training:
         self.model = Model(inputs=[inputs, labels, input_length, label_length],

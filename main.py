@@ -26,9 +26,13 @@ def main():
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')
     data_loader = OCRDataLoader(config)
+    config.letters = data_loader.letters
+    val_data_loader = OCRDataLoader(config, phase='val')
 
+
+    config.validation_steps = val_data_loader.get_steps()
     print('Create the trainer')
-    trainer = OCRTrainer(model.model, data_loader, config)
+    trainer = OCRTrainer(model, data_loader, val_data_loader, config)
 
     print('Start training the model.')
     trainer.train()

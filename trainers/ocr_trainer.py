@@ -1,16 +1,18 @@
 from base.base_trainer import BaseTrain
 import os
 from keras.callbacks import ModelCheckpoint, TensorBoard
+from .training_callbacks import TrainingCallback
 
 
 class OCRTrainer(BaseTrain):
-    def __init__(self, model, data, config):
+    def __init__(self, model, data, val_data, config):
         super(OCRTrainer, self).__init__(model, data, config)
         self.callbacks = []
         self.loss = []
         self.acc = []
         self.val_loss = []
         self.val_acc = []
+        self.val_data = val_data
         self.init_callbacks()
 
     def init_callbacks(self):
@@ -33,6 +35,12 @@ class OCRTrainer(BaseTrain):
             )
         )
 
+        self.callbacks.append(
+            TrainingCallback(self.model.test_func, self.config.letters,
+                             self.config.validation_steps, self.config.trainer.batch_size,
+                             self.val_data.next_batch())
+        )
+
         # if hasattr(self.config,"comet_api_key"):
         # if ("comet_api_key" in self.config):
         #     from comet_ml import Experiment
@@ -42,9 +50,11 @@ class OCRTrainer(BaseTrain):
         #     self.callbacks.append(experiment.get_keras_callback())
 
     def train(self):
-        self.model.fit_generator(generator=self.data.next_batch(),
-                                 steps_per_epoch=1000,
+        self.model.model.fit_generator(generator=self.data.next_batch(),
+                                 steps_per_epoch=10,
                                  epochs=self.config.trainer.num_epochs,
                                  verbose=self.config.trainer.verbose_training,
                                  callbacks=self.callbacks,
+                                 validation_data=self.val_data.next_batch(),
+                                 validation_steps=10 # self.config.validation_steps
                                  )
