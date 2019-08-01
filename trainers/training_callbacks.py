@@ -3,7 +3,7 @@ import editdistance
 import numpy as np
 import itertools
 from utils.ocr_utils import label_to_text
-
+from tqdm import tqdm
 
 # https://github.com/keras-team/keras/issues/10472
 
@@ -66,7 +66,8 @@ class TrainingCallback(keras.callbacks.Callback):
         total_mean_ed = 0
         total_loss = 0
 
-        for step in range(self.validation_steps):
+        print("Evaluating Validation set ...")
+        for step in tqdm(range(self.validation_steps)):
             mean_norm_ed, mean_ed, loss_batch = self.show_edit_distance(self.batch_size)
             total_mean_norm_ed += mean_norm_ed
             total_mean_ed += mean_ed

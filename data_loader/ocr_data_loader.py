@@ -86,6 +86,7 @@ class OCRDataLoader(object):
             for i in range(self.n // self.batch_size):
                 max_width = 0
                 images = []
+                # TODO ones or zeros: default ones
                 labels = np.zeros([self.batch_size, self.max_text_len], dtype=np.int)
                 label_length = np.zeros((self.batch_size, 1))
 
@@ -103,6 +104,7 @@ class OCRDataLoader(object):
                     # if self.phase == 'train':
                     label = text_to_labels(self.labels[j], letters=self.letters)
                     labels[j - i * self.batch_size, :len(label)] = label
+                    # TODO how to handle label_length = 0
                     if len(self.labels[j]) != 0:
                         label_length[j - i * self.batch_size] = len(self.labels[j])
                     else:
