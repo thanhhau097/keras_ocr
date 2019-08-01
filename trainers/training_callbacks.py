@@ -77,8 +77,8 @@ class TrainingCallback(keras.callbacks.Callback):
         total_loss /= self.validation_steps
 
         print('\nMean edit distance:'
-              '%.3f Mean normalized edit distance: %0.3f'
-              'Loss batch: %0.3f'
+              '%.3f \tMean normalized edit distance: %0.3f'
+              '\tLoss batch: %0.3f'
               % (total_mean_ed, total_mean_norm_ed, total_loss))
 
         if total_loss < self.min_loss:

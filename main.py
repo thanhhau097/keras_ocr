@@ -1,3 +1,7 @@
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = 0
+
 import comet_ml
 from data_loader.ocr_data_loader import OCRDataLoader
 from models.ocr_model import OCRModel
