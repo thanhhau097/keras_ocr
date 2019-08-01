@@ -55,7 +55,7 @@ class OCRModel(BaseModel):
             name='ctc')([y_pred, labels, input_length, label_length])
 
         # test function
-        self.test_func = K.function([inputs], [y_pred])
+        self.test_func = K.function([inputs, labels, input_length, label_length], [y_pred, loss_out])
 
         # if training:
         self.model = Model(inputs=[inputs, labels, input_length, label_length],

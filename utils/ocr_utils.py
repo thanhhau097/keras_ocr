@@ -25,13 +25,20 @@ def ctc_lambda_func(args):
     y_pred = y_pred[:, 2:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
-
-# def decode_batch(test_func, word_batch):
-#     out = test_func([word_batch])[0]
-#     ret = []
-#     for j in range(out.shape[0]):
-#         out_best = list(np.argmax(out[j, 2:], 1))
-#         out_best = [k for k, g in itertools.groupby(out_best)]
-#         outstr = label_to_text(out_best, LETTERS)
-#         ret.append(outstr)
-#     return ret
+def decode_batch_validation(test_func, data_batch, letters):
+    # 'the_input': images,  # (bs, w, h, 1)
+    # 'the_labels': labels,  # (bs, 8)
+    # 'input_length': input_length,  # (bs, 1)
+    # 'label_length': label_length  # (bs, 1)
+    # inputs = data_batch['the_inputs']
+    output = test_func(list(data_batch.values()))
+    out, loss = output
+    ret = []
+    for j in range(out.shape[0]):
+        out_best = list(np.argmax(out[j, 2:], 1))
+        out_best = [k for k, g in itertools.groupby(out_best)]
+        outstr = label_to_text(out_best, letters)
+        ret.append(outstr)
+    loss = np.reshape(loss, [-1])
+    print(loss)
+    return ret, loss

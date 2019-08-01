@@ -16,17 +16,17 @@ class OCRTrainer(BaseTrain):
         self.init_callbacks()
 
     def init_callbacks(self):
-        self.callbacks.append(
-            ModelCheckpoint(
-                filepath=os.path.join(self.config.callbacks.checkpoint_dir,
-                                      '%s-{epoch:02d}-{val_loss:.2f}.hdf5' % self.config.exp.name),
-                monitor=self.config.callbacks.checkpoint_monitor,
-                mode=self.config.callbacks.checkpoint_mode,
-                save_best_only=self.config.callbacks.checkpoint_save_best_only,
-                save_weights_only=self.config.callbacks.checkpoint_save_weights_only,
-                verbose=self.config.callbacks.checkpoint_verbose,
-            )
-        )
+        # self.callbacks.append(
+        #     ModelCheckpoint(
+        #         filepath=os.path.join(self.config.callbacks.checkpoint_dir,
+        #                               '%s-{epoch:02d}-{val_loss:.2f}.hdf5' % self.config.exp.name),
+        #         monitor=self.config.callbacks.checkpoint_monitor,
+        #         mode=self.config.callbacks.checkpoint_mode,
+        #         save_best_only=self.config.callbacks.checkpoint_save_best_only,
+        #         save_weights_only=self.config.callbacks.checkpoint_save_weights_only,
+        #         verbose=self.config.callbacks.checkpoint_verbose,
+        #     )
+        # )
 
         self.callbacks.append(
             TensorBoard(
@@ -51,10 +51,10 @@ class OCRTrainer(BaseTrain):
 
     def train(self):
         self.model.model.fit_generator(generator=self.data.next_batch(),
-                                 steps_per_epoch=10,
+                                 steps_per_epoch=1000,
                                  epochs=self.config.trainer.num_epochs,
                                  verbose=self.config.trainer.verbose_training,
                                  callbacks=self.callbacks,
-                                 validation_data=self.val_data.next_batch(),
-                                 validation_steps=10 # self.config.validation_steps
+                                 # validation_data=self.val_data.next_batch(),
+                                 # validation_steps=10 # self.config.validation_steps
                                  )
