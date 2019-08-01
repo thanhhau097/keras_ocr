@@ -38,7 +38,7 @@ class OCRTrainer(BaseTrain):
         self.callbacks.append(
             TrainingCallback(self.model.test_func, self.config.letters,
                              self.config.validation_steps, self.config.trainer.batch_size,
-                             self.val_data.next_batch())
+                             self.val_data.next_batch(), filepath='experiments/models/model.h5')
         )
 
         # if hasattr(self.config,"comet_api_key"):
@@ -51,10 +51,7 @@ class OCRTrainer(BaseTrain):
 
     def train(self):
         self.model.model.fit_generator(generator=self.data.next_batch(),
-                                 steps_per_epoch=1000,
+                                 steps_per_epoch=1,
                                  epochs=self.config.trainer.num_epochs,
                                  verbose=self.config.trainer.verbose_training,
-                                 callbacks=self.callbacks,
-                                 # validation_data=self.val_data.next_batch(),
-                                 # validation_steps=10 # self.config.validation_steps
-                                 )
+                                 callbacks=self.callbacks)
