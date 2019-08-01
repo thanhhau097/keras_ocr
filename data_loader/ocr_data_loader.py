@@ -45,12 +45,12 @@ class OCRDataLoader(object):
         with open(self.get_data_path(self.config.data.vocab_path), 'r') as f:
             data = json.load(f)
 
-        letters = set(data.values())
+        letters = list(data.values())
         # add letters not in vocab files
         for label in (self.labels + self.val_labels):
             for char in label:
                 if char not in letters:
-                    letters.add(char)
+                    letters.append(char)
         return list(letters)
 
     def get_steps(self):
