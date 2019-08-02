@@ -38,6 +38,6 @@
     "channels": 3
   },
   "hyperparameter": {
-    "max_text_len": 128
+    "max_text_len": 140
   }
 }
