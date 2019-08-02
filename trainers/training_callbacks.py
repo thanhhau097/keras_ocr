@@ -2,10 +2,11 @@ import keras
 import editdistance
 import numpy as np
 import itertools
-from utils.ocr_utils import label_to_text
+from utils.ocr_utils import labels_to_text
 from tqdm import tqdm
 
 # https://github.com/keras-team/keras/issues/10472
+
 
 class TrainingCallback(keras.callbacks.Callback):
     def __init__(self, test_func, letters, steps, batch_size, validation_data,
@@ -27,7 +28,7 @@ class TrainingCallback(keras.callbacks.Callback):
         for j in range(out.shape[0]):
             out_best = list(np.argmax(out[j, 2:], 1))
             out_best = [k for k, g in itertools.groupby(out_best)]
-            outstr = label_to_text(out_best, letters)
+            outstr = labels_to_text(out_best, letters)
             ret.append(outstr)
         loss = np.reshape(loss, [-1])
         # print(loss)
@@ -38,6 +39,7 @@ class TrainingCallback(keras.callbacks.Callback):
         mean_norm_ed = 0.0
         mean_ed = 0.0
         loss_batch = 0
+        true_fields = 0
         while num_left > 0:
             data_batch = next(self.text_img_gen)[0]
             decoded_res, loss = self.decode_batch_validation(self.test_func,
@@ -47,16 +49,19 @@ class TrainingCallback(keras.callbacks.Callback):
 
             for j in range(num_left):
                 label_length = int(data_batch['label_length'][j])
-                source_str = label_to_text(data_batch['the_labels'][j], self.letters)[:label_length]
+                source_str = labels_to_text(data_batch['the_labels'][j], self.letters)[:label_length]
                 edit_dist = editdistance.eval(decoded_res[j], source_str)
                 mean_ed += float(edit_dist)
                 mean_norm_ed += float(edit_dist) / len(source_str)
+                if decoded_res[j] == source_str:
+                    true_fields += 1
+
             num_left -= num
         mean_norm_ed = mean_norm_ed / num
         mean_ed = mean_ed / num
         loss_batch = loss_batch / num
 
-        return mean_norm_ed, mean_ed, loss_batch
+        return mean_norm_ed, mean_ed, loss_batch, true_fields
 
     def on_epoch_end(self, epoch, logs=None):
         """Calculate accuracy for final train batch and accuracy for validation set
@@ -65,22 +70,26 @@ class TrainingCallback(keras.callbacks.Callback):
         total_mean_norm_ed = 0
         total_mean_ed = 0
         total_loss = 0
+        total_true_fields = 0
 
         print("Evaluating Validation set ...")
-        for step in tqdm(range(self.validation_steps)):
-            mean_norm_ed, mean_ed, loss_batch = self.show_edit_distance(self.batch_size)
+        for _ in tqdm(range(self.validation_steps)):
+            mean_norm_ed, mean_ed, loss_batch, true_fields = self.show_edit_distance(self.batch_size)
             total_mean_norm_ed += mean_norm_ed
             total_mean_ed += mean_ed
             total_loss += loss_batch
+            total_true_fields += true_fields
 
         total_mean_norm_ed /= self.validation_steps
         total_mean_ed /= self.validation_steps
         total_loss /= self.validation_steps
+        accuracy_by_field = total_true_fields / (self.validation_steps * self.batch_size)
 
         print('\nMean edit distance:'
               '%.3f \tMean normalized edit distance: %0.3f'
               '\tLoss batch: %0.3f'
-              % (total_mean_ed, total_mean_norm_ed, total_loss))
+              '\nAccuracy by fields: %0.3f'
+              % (total_mean_ed, total_mean_norm_ed, total_loss, accuracy_by_field))
 
         if total_loss < self.min_loss:
             self.min_loss = total_loss

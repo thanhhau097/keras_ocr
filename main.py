@@ -26,7 +26,6 @@ def main():
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')
     data_loader = OCRDataLoader(config)
-    config.letters = data_loader.letters
     val_data_loader = OCRDataLoader(config, phase='val')
 
     config.validation_steps = val_data_loader.get_steps()

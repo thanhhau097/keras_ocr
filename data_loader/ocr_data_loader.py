@@ -3,10 +3,11 @@ import os
 import random
 import json
 from sklearn.utils import shuffle
-from utils.ocr_utils import label_to_text, text_to_labels
+from utils.ocr_utils import labels_to_text, text_to_labels
 import numpy as np
 from data_loader import augmentions
 from data_loader import policies as found_policies
+from utils.ocr_utils import update_vocab
 
 
 class OCRDataLoader(object):
@@ -31,30 +32,33 @@ class OCRDataLoader(object):
         self.image_paths, self.labels = self.get_image_paths_and_labels(data_json_path)
         self.n = len(self.image_paths)
 
-        # to make sure that all characters are in vocabulary
         if phase == 'train':
-            _, self.val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
-        else:
-            self.val_labels = []
-
-        if phase == 'train':
-            self.letters = self.read_letters()
-        else:
-            self.letters = config.letters
+            self.build_vocab()
+        elif phase == 'test': # no need val, because it is concurrent with train
+            self.load_vocab()
         print('Done initialization!')
-        print('Number of characters:', len(self.letters))
 
-    def read_letters(self):
-        with open(self.get_data_path(self.config.data.vocab_path), 'r') as f:
-            data = json.load(f)
-
-        letters = list(data.values())
+    def build_vocab(self):
+        _, val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
+        letters = set()
         # add letters not in vocab files
-        for label in (self.labels + self.val_labels):
+        for label in (self.labels + val_labels):
             for char in label:
                 if char not in letters:
-                    letters.append(char)
-        return list(letters)
+                    letters.add(char)
+
+        letters = ''.join(list(letters))
+        print('Number of characters:', len(letters))
+        update_vocab(letters)
+
+        with open(self.config.data.vocab_path, 'w') as f:
+            json.dump({'characters': letters}, f)
+
+    def load_vocab(self):
+        with open(self.config.data.vocab_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            update_vocab(data['characters'])
+
 
     def get_steps(self):
         return self.n // self.batch_size
@@ -105,7 +109,7 @@ class OCRDataLoader(object):
                     images.append(img)
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
                     # if self.phase == 'train':
-                    label = text_to_labels(self.labels[j], letters=self.letters)
+                    label = text_to_labels(self.labels[j])
                     labels[j - i * self.batch_size, :len(label)] = label
                     # TODO how to handle label_length = 0
                     if len(self.labels[j]) != 0:

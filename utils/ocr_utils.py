@@ -3,9 +3,15 @@ import numpy as np
 import itertools
 
 
-LETTERS = None
+LETTERS = ''
 
-def label_to_text(labels, letters=None):
+
+def update_vocab(letters):
+    global LETTERS
+    LETTERS = letters
+
+
+def labels_to_text(labels):
     ret = []
     for c in labels:
         if c == len(LETTERS):  # CTC Blank
@@ -16,11 +22,8 @@ def label_to_text(labels, letters=None):
     # return ''.join(list(map(lambda x: letters[int(x)], labels)))
 
 
-def text_to_labels(text, letters=None):      # text를 letters 배열에서의 인덱스 값으로 변환
-    global LETTERS
-    if LETTERS is None:
-        LETTERS = letters
-    return list(map(lambda x: letters.index(x), text))
+def text_to_labels(text):      # text를 letters 배열에서의 인덱스 값으로 변환
+    return list(map(lambda x: LETTERS.index(x), text))
 
 
 def ctc_lambda_func(args):
@@ -31,12 +34,12 @@ def ctc_lambda_func(args):
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
 
-def decode_batch(test_func, word_batch):
-    out = test_func([word_batch])[0]
+def decode_batch(pred_func, word_batch):
+    out = pred_func([word_batch])[0]
     ret = []
     for j in range(out.shape[0]):
         out_best = list(np.argmax(out[j, 2:], 1))
-        out_best = [k for k, g in itertools.groupby(out_best)]
-        outstr = label_to_text(out_best, LETTERS)
+        out_best = [k for k, g in itertools.groupby(out_best)] # best path
+        outstr = labels_to_text(out_best)
         ret.append(outstr)
     return ret
