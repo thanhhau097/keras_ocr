@@ -5,6 +5,8 @@ import json
 from sklearn.utils import shuffle
 from utils.ocr_utils import label_to_text, text_to_labels
 import numpy as np
+from data_loader import augmentions
+from data_loader import policies as found_policies
 
 
 class OCRDataLoader(object):
@@ -15,6 +17,7 @@ class OCRDataLoader(object):
         self.max_height = self.config.image.max_height
         self.channels = self.config.image.channels
         self.phase = phase
+        self.good_policies = found_policies.good_policies()
 
         if phase == 'train':
             data_json_path = self.get_data_path(self.config.data.train_json_path)
@@ -57,7 +60,7 @@ class OCRDataLoader(object):
         return self.n // self.batch_size
 
     def get_data_path(self, path):
-        return os.path.join(self.config.data.root, path)
+        return os.path.join('../' + self.config.data.root, path)
 
     def get_image_paths_and_labels(self, json_path):
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -112,8 +115,6 @@ class OCRDataLoader(object):
 
                     if img.shape[1] > max_width:
                         max_width = img.shape[1]
-                # if max_width < 1024:
-                #     max_width = 1024
 
                 images = self.process_batch_images(images, max_width)
                 images = np.transpose(images, [0, 2, 1, 3])
@@ -129,16 +130,27 @@ class OCRDataLoader(object):
                 yield (inputs, outputs)
 
     def process_batch_images(self, images, max_width):
+        """Apply augmentations"""
         output = np.ones([self.batch_size, self.max_height, max_width, self.channels])
         for i, image in enumerate(images):
+            epoch_policy = self.good_policies[np.random.choice(
+                len(self.good_policies))]
+            final_img = augmentions.apply_policy(
+                epoch_policy, image)
+            # final_img = augmentions.random_flip(
+            #     augmentions.zero_pad_and_crop(final_img, 4))
+            # Apply cutout
+            final_img = augmentions.cutout_numpy(final_img)
+
             shape = image.shape
-            output[i, :shape[0], :shape[1], :] = image
+            output[i, :shape[0], :shape[1], :] = final_img
         return output
 
 
 # if __name__ == '__main__':
 #     from utils.config import process_config
 #     config = process_config('../configs/config.json')
+#     config.downsample_factor = 4
 #     dataloader = OCRDataLoader(config, phase="train")
 #
 #     print(next(dataloader.next_batch())[0]['the_labels'])

@@ -6,12 +6,17 @@ import itertools
 LETTERS = None
 
 def label_to_text(labels, letters=None):
-    return ''.join(list(map(lambda x: letters[int(x)], labels)))
+    ret = []
+    for c in labels:
+        if c == len(LETTERS):  # CTC Blank
+            ret.append("")
+        else:
+            ret.append(LETTERS[c])
+    return "".join(ret)
+    # return ''.join(list(map(lambda x: letters[int(x)], labels)))
 
 
 def text_to_labels(text, letters=None):      # text를 letters 배열에서의 인덱스 값으로 변환
-    # TODO wrong character embedding
-    # try:
     global LETTERS
     if LETTERS is None:
         LETTERS = letters
