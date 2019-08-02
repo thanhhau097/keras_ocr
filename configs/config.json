@@ -3,7 +3,8 @@
     "name": "lionel_ocr"
   },
   "data_loader": {
-    "name": "ocr_data_loader.OCRDataLoader"
+    "name": "ocr_data_loader.OCRDataLoader",
+    "augmentation": false
   },
   "model": {
     "name": "ocr_model.OCRModel",
@@ -15,7 +16,6 @@
     "name": "ocr_trainer.OCRTrainer",
     "num_epochs": 20,
     "batch_size": 16,
-    "validation_split": 0.1,
     "verbose_training": true
   },
   "callbacks": {

@@ -60,7 +60,7 @@ class OCRDataLoader(object):
         return self.n // self.batch_size
 
     def get_data_path(self, path):
-        return os.path.join(self.config.data.root, path)
+        return os.path.join('../' + self.config.data.root, path)
 
     def get_image_paths_and_labels(self, json_path):
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -133,24 +133,30 @@ class OCRDataLoader(object):
         """Apply augmentations"""
         output = np.ones([self.batch_size, self.max_height, max_width, self.channels])
         for i, image in enumerate(images):
-            epoch_policy = self.good_policies[np.random.choice(
-                len(self.good_policies))]
-            final_img = augmentions.apply_policy(
-                epoch_policy, image)
-            # final_img = augmentions.random_flip(
-            #     augmentions.zero_pad_and_crop(final_img, 4))
-            # Apply cutout
-            final_img = augmentions.cutout_numpy(final_img)
+            final_img = image
+            if self.config.augmentation:
+                epoch_policy = self.good_policies[np.random.choice(
+                    len(self.good_policies))]
+                final_img = augmentions.apply_policy(
+                    epoch_policy, final_img)
+                # final_img = augmentions.random_flip(
+                #     augmentions.zero_pad_and_crop(final_img, 4))
+                # Apply cutout
+                final_img = augmentions.cutout_numpy(final_img)
 
             shape = image.shape
             output[i, :shape[0], :shape[1], :] = final_img
         return output
 
 
-# if __name__ == '__main__':
-#     from utils.config import process_config
-#     config = process_config('../configs/config.json')
-#     config.downsample_factor = 4
-#     dataloader = OCRDataLoader(config, phase="train")
-#
-#     print(next(dataloader.next_batch())[0]['the_labels'])
+if __name__ == '__main__':
+    from utils.config import process_config
+    config = process_config('../configs/config.json')
+    config.downsample_factor = 4
+    dataloader = OCRDataLoader(config, phase="train")
+
+    data = next(dataloader.next_batch())[0]['the_input']
+    from matplotlib import pyplot as plt
+    for image in data:
+        plt.imshow(image.transpose([1, 0, 2]))
+        plt.show()
