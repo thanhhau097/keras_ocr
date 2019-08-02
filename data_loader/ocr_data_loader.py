@@ -60,7 +60,7 @@ class OCRDataLoader(object):
         return self.n // self.batch_size
 
     def get_data_path(self, path):
-        return os.path.join('../' + self.config.data.root, path)
+        return os.path.join(self.config.data.root, path)
 
     def get_image_paths_and_labels(self, json_path):
         with open(json_path, 'r', encoding='utf-8') as f:
