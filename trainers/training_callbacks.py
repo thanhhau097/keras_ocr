@@ -30,7 +30,7 @@ class TrainingCallback(keras.callbacks.Callback):
             outstr = label_to_text(out_best, letters)
             ret.append(outstr)
         loss = np.reshape(loss, [-1])
-        print(loss)
+        # print(loss)
         return ret, loss
 
     def show_edit_distance(self, num):

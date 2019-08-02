@@ -39,7 +39,7 @@ class OCRModel(BaseModel):
         print("After Decoder:", inner)
 
         # transforms RNN output to character activations:
-        num_classes = 4757
+        num_classes = 4758
         inner = Dense(num_classes, kernel_initializer='he_normal', name='dense2')(inner)  # (None, 32, 63)
         y_pred = Activation('softmax', name='softmax')(inner)
 
