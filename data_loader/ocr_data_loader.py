@@ -113,7 +113,10 @@ class OCRDataLoader(object):
                     labels[j - i * self.batch_size, :len(label)] = label
                     # TODO how to handle label_length = 0
                     if len(self.labels[j]) != 0:
-                        label_length[j - i * self.batch_size] = len(self.labels[j])
+                        if len(self.labels[j]) > self.config.hyperparameter.max_text_len:
+                            label_length[j - i * self.batch_size] = self.config.hyperparameter.max_text_len
+                        else:
+                            label_length[j - i * self.batch_size] = len(self.labels[j])
                     else:
                         label_length[j - i * self.batch_size] = 1
 
