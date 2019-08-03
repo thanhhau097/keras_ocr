@@ -110,7 +110,7 @@ class OCRDataLoader(object):
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
                     # if self.phase == 'train':
                     label = text_to_labels(self.labels[j])
-                    labels[j - i * self.batch_size, :len(label)] = label
+                    labels[j - i * self.batch_size, :len(label)] = label[:self.config.hyperparameter.max_text_len]
                     # TODO how to handle label_length = 0
                     if len(self.labels[j]) != 0:
                         if len(self.labels[j]) > self.config.hyperparameter.max_text_len:
