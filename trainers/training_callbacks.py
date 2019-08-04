@@ -28,7 +28,7 @@ class TrainingCallback(keras.callbacks.Callback):
         for j in range(out.shape[0]):
             out_best = list(np.argmax(out[j, 2:], 1))
             out_best = [k for k, g in itertools.groupby(out_best)]
-            outstr = labels_to_text(out_best, letters)
+            outstr = labels_to_text(out_best)
             ret.append(outstr)
         loss = np.reshape(loss, [-1])
         # print(loss)
@@ -49,7 +49,7 @@ class TrainingCallback(keras.callbacks.Callback):
 
             for j in range(num_left):
                 label_length = int(data_batch['label_length'][j])
-                source_str = labels_to_text(data_batch['the_labels'][j], self.letters)[:label_length]
+                source_str = labels_to_text(data_batch['the_labels'][j])[:label_length]
                 edit_dist = editdistance.eval(decoded_res[j], source_str)
                 mean_ed += float(edit_dist)
                 mean_norm_ed += float(edit_dist) / len(source_str)
