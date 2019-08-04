@@ -22,7 +22,7 @@ def build_vocab(config):
     print('Number of characters:', len(letters))
     update_vocab(letters)
 
-    with open(config.data.vocab_path, 'w') as f:
+    with open('data/' + config.data.vocab_path, 'w') as f:
         json.dump({'characters': letters}, f)
 
     return len(letters)
