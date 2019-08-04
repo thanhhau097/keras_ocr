@@ -17,7 +17,11 @@ def labels_to_text(labels):
         if c == len(LETTERS):  # CTC Blank
             ret.append("")
         else:
-            ret.append(LETTERS[c])
+            try:
+                ret.append(LETTERS[c])
+            except:
+                print(c)
+                raise ValueError('Index out of range')
     return "".join(ret)
     # return ''.join(list(map(lambda x: letters[int(x)], labels)))
 
