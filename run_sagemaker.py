@@ -10,7 +10,7 @@ role = sagemaker.get_execution_role()
 account = sess.boto_session.client('sts').get_caller_identity()['Account']
 region = sess.boto_session.region_name
 
-repo_name = 'anson-ocr' # ECR repository
+repo_name = 'lionel-ocr' # ECR repository
 image_tag = 'prj_scsk' # ECR image tag
 base_job_name = 'scsk-lionelocr' # SageMaker training prefix
 dockerfile = os.path.abspath('./new_dockerfile')
