@@ -32,32 +32,32 @@ class OCRDataLoader(object):
         self.image_paths, self.labels = self.get_image_paths_and_labels(data_json_path)
         self.n = len(self.image_paths)
 
-        if phase == 'train':
-            self.build_vocab()
-        elif phase == 'test': # no need val, because it is concurrent with train
-            self.load_vocab()
-        print('Done initialization!')
+        # if phase == 'train':
+        #     self.build_vocab()
+        # elif phase == 'test': # no need val, because it is concurrent with train
+        #     self.load_vocab()
+        # print('Done initialization!')
 
-    def build_vocab(self):
-        _, val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
-        letters = set()
-        # add letters not in vocab files
-        for label in (self.labels + val_labels):
-            for char in label:
-                if char not in letters:
-                    letters.add(char)
-
-        letters = ''.join(list(letters))
-        print('Number of characters:', len(letters))
-        update_vocab(letters)
-
-        with open(self.config.data.vocab_path, 'w') as f:
-            json.dump({'characters': letters}, f)
-
-    def load_vocab(self):
-        with open(self.config.data.vocab_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            update_vocab(data['characters'])
+    # def build_vocab(self):
+    #     _, val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
+    #     letters = set()
+    #     # add letters not in vocab files
+    #     for label in (self.labels + val_labels):
+    #         for char in label:
+    #             if char not in letters:
+    #                 letters.add(char)
+    #
+    #     letters = ''.join(list(letters))
+    #     print('Number of characters:', len(letters))
+    #     update_vocab(letters)
+    #
+    #     with open(self.config.data.vocab_path, 'w') as f:
+    #         json.dump({'characters': letters}, f)
+    #
+    # def load_vocab(self):
+    #     with open(self.config.data.vocab_path, 'r', encoding='utf-8') as f:
+    #         data = json.load(f)
+    #         update_vocab(data['characters'])
 
 
     def get_steps(self):

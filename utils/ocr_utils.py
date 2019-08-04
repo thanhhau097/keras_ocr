@@ -1,9 +1,50 @@
 from keras import backend as K
 import numpy as np
 import itertools
+import os
+import json
 
 
 LETTERS = ''
+
+
+def build_vocab(config):
+    _, train_labels = get_image_paths_and_labels(get_data_path(config, config.data.train_json_path))
+    _, val_labels = get_image_paths_and_labels(get_data_path(config, config.data.val_json_path))
+    letters = set()
+    # add letters not in vocab files
+    for label in (train_labels + val_labels):
+        for char in label:
+            if char not in letters:
+                letters.add(char)
+
+    letters = ''.join(list(letters))
+    print('Number of characters:', len(letters))
+    update_vocab(letters)
+
+    with open(config.data.vocab_path, 'w') as f:
+        json.dump({'characters': letters}, f)
+
+    return len(letters)
+
+
+def load_vocab(config):
+    with open(config.data.vocab_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        # update_vocab(data['characters'])
+
+
+def get_data_path(config, path):
+    return os.path.join(config.data.root, path)
+
+
+def get_image_paths_and_labels(json_path):
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    image_paths = list(data.keys())
+    labels = list(data.values())
+    return image_paths, labels
 
 
 def update_vocab(letters):

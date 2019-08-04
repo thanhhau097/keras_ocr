@@ -51,7 +51,7 @@ class OCRTrainer(BaseTrain):
 
     def train(self):
         self.model.model.fit_generator(generator=self.data.next_batch(),
-                                 steps_per_epoch=5000,
+                                 steps_per_epoch=2,
                                  epochs=self.config.trainer.num_epochs,
                                  verbose=self.config.trainer.verbose_training,
                                  callbacks=self.callbacks)
