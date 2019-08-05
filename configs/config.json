@@ -29,7 +29,7 @@
   "data": {
     "root": "/opt/ml/input/data/train/data/Japanese/",
     "train_json_path": "train.json",
-    "val_json_path": "val.json",
+    "val_json_path": "test.json",
     "test_json_path": "test.json",
     "vocab_path": "vocab.json"
   },
