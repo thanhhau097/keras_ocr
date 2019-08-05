@@ -2,4 +2,9 @@ tensorflow-gpu
 keras
 numpy
 tqdm
-python-opencv
+opencv-python
+comet_ml
+scikit-learn
+pillow
+editdistance
+dotmap

@@ -10,7 +10,7 @@ role = sagemaker.get_execution_role()
 account = sess.boto_session.client('sts').get_caller_identity()['Account']
 region = sess.boto_session.region_name
 
-repo_name = 'lionel-ocr' # ECR repository
+repo_name = 'ocr' # ECR repository
 image_tag = 'prj_scsk' # ECR image tag
 base_job_name = 'scsk-lionelocr' # SageMaker training prefix
 dockerfile = os.path.abspath('./new_dockerfile')
@@ -21,6 +21,14 @@ print("Repo name: {0}".format(repo_name))
 print("Image tag: {0}".format(image_tag))
 print("Base job name: {0}".format(base_job_name))
 print("Docker file: {0}".format(dockerfile))
+
+# %%sh
+subprocess.run("aws ecr describe-repositories --repository-names {} > /dev/null 2>&1".format(repo_name))
+# if [ $? -ne 0 ]
+# then
+subprocess.run("aws ecr create-repository --repository-name {} > /dev/null".format(repo_name))
+# fi
+subprocess.run("aws ecr get-login --region {} --no-include-email".format(region))
 
 # Build docker and push to ionstance
 subprocess.run("docker build -t {0} -f {1} . ".format(image_tag, dockerfile), shell=True)
