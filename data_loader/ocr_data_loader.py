@@ -105,11 +105,16 @@ class OCRDataLoader(object):
                         img = cv2.imread(path)
                     else:
                         raise ValueError("Number of channels must be 1 or 3")
-                    img = self.process_image(image=img)
                     if img is None:
                         print(path)
-                    img = np.ones([64, 100, 3])
+                        print(os.listdir('/opt/ml/input/data/train/data'))
+                        print(os.listdir('/opt/ml/input/data/train/'))
+                        print(os.listdir('/opt/ml/input/data/train/Japanese'))
+                        raise ValueError('wrong path')
+
+                    img = self.process_image(image=img)
                     images.append(img)
+
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
                     # if self.phase == 'train':
                     label = text_to_labels(self.labels[j])
