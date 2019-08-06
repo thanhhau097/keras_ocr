@@ -109,7 +109,10 @@ class OCRDataLoader(object):
                         print(path)
                         print(os.listdir('/opt/ml/input/data/train/data'))
                         print(os.listdir('/opt/ml/input/data/train/'))
-                        print(os.listdir('/opt/ml/input/data/train/Japanese'))
+                        print(os.listdir('/opt/ml/input/data/train/data/Japanese'))
+                        print(os.listdir('/opt/ml/input/data/train/data/Japanese/invoice/images/'))
+                        print(os.listdir('/opt/ml/input/data/train/data/Japanese/invoice/images/Invoice_Lines_fromLuxyTrain_includeNote'))
+                        print(os.listdir('/opt/ml/input/data/train/data/Japanese/invoice/images/Invoice_Lines_fromLuxyTrain_includeNote/Invoice_fromLuxyTrain_train'))
                         raise ValueError('wrong path')
 
                     img = self.process_image(image=img)
