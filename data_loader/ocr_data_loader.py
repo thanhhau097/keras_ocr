@@ -106,6 +106,9 @@ class OCRDataLoader(object):
                     else:
                         raise ValueError("Number of channels must be 1 or 3")
                     img = self.process_image(image=img)
+                    if img is None:
+                        print(path)
+                    img = np.ones([64, 100, 3])
                     images.append(img)
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
                     # if self.phase == 'train':
