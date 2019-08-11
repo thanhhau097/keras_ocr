@@ -97,4 +97,4 @@ class TrainingCallback(keras.callbacks.Callback):
             if self.save_weights_only:
                 self.model.save_weights(self.filepath, overwrite=True)
             else:
-                self.model.save(self.filepath, overwrite=True)
+                self.model.save_model(self.filepath, overwrite=True)
