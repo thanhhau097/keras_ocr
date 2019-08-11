@@ -4,6 +4,7 @@ from keras.models import Model
 from keras.layers import *
 from models.encoders.simple_encoder import SimpleEncoder
 from models.encoders.mobilenet_encoder import MobileNetEncoder
+from models.encoders.mixnet_encoder import MixNetEncoder
 from models.decoders.simple_decoder import SimpleDecoder
 
 
@@ -20,7 +21,7 @@ class OCRModel(BaseModel):
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
 
         # ENCODER
-        encoder = MobileNetEncoder()
+        encoder = MixNetEncoder()
         inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 
