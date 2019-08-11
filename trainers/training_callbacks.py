@@ -93,8 +93,8 @@ class TrainingCallback(keras.callbacks.Callback):
 
         if total_loss < self.min_loss:
             self.min_loss = total_loss
-            print("Update new weights")
-            if self.save_weights_only:
-                self.model.save_weights(self.filepath, overwrite=True)
-            else:
-                self.model.save(self.filepath)
+            # print("Update new weights")
+            # if self.save_weights_only:
+            #     self.model.save_weights(self.filepath, overwrite=True)
+            # else:
+            #     self.model.save(self.filepath)
