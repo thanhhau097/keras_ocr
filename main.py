@@ -1,6 +1,7 @@
 import comet_ml
 from data_loader.ocr_data_loader import OCRDataLoader
 from models.ocr_model import OCRModel
+from models.attention_model import AttentionModel
 from trainers.ocr_trainer import OCRTrainer
 from utils.config import process_config
 from utils.dirs import create_dirs
@@ -21,12 +22,14 @@ def main():
     # create the experiments dirs
     create_dirs([config.callbacks.tensorboard_log_dir, config.callbacks.checkpoint_dir])
 
+    # TODO
+    # type 'ctc' and type 'attention' (+2)
     print('Building vocabulary')
+    config.vocab_type = 'attention'
     config.n_letters = build_vocab(config)
 
-
     print('Create the model.')
-    model = OCRModel(config)
+    model = AttentionModel(config)
 
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')

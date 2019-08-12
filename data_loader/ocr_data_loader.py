@@ -3,7 +3,7 @@ import os
 import random
 import json
 from sklearn.utils import shuffle
-from utils.ocr_utils import labels_to_text, text_to_labels
+from utils.ocr_utils import labels_to_text, text_to_labels, get_input_token_index
 import numpy as np
 from data_loader import augmentions
 from data_loader import policies as found_policies
@@ -93,7 +93,7 @@ class OCRDataLoader(object):
             for i in range(self.n // self.batch_size):
                 max_width = 0
                 images = []
-                # TODO ones or zeros: default ones
+
                 labels = np.zeros([self.batch_size, self.max_text_len], dtype=np.int)
                 label_length = np.zeros((self.batch_size, 1))
 
@@ -108,10 +108,13 @@ class OCRDataLoader(object):
                     img = self.process_image(image=img)
                     images.append(img)
                     # labels must be tensor `(samples, max_string_length)` containing the truth labels.
-                    # if self.phase == 'train':
-                    label = text_to_labels(self.labels[j])
+                    if self.config.vocab_type == 'ctc':
+                        label = text_to_labels(self.labels[j])
+                    else:
+                        label = text_to_labels(self.labels[j] + '\n')
+
                     labels[j - i * self.batch_size, :len(label)] = label[:self.config.hyperparameter.max_text_len]
-                    # TODO how to handle label_length = 0
+
                     if len(self.labels[j]) != 0:
                         if len(self.labels[j]) > self.config.hyperparameter.max_text_len:
                             label_length[j - i * self.batch_size] = self.config.hyperparameter.max_text_len
@@ -125,16 +128,44 @@ class OCRDataLoader(object):
 
                 images = self.process_batch_images(images, max_width)
                 images = np.transpose(images, [0, 2, 1, 3])
-                input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
-                inputs = {
-                    'the_input': images,  # (bs, w, h, 1)
-                    'the_labels': labels,  # (bs, 8)
-                    'input_length': input_length,  # (bs, 1)
-                    'label_length': label_length  # (bs, 1)
-                }
-                outputs = {'ctc': np.zeros([self.batch_size])}  # (bs, 1) -> 모든 원소 0
-                # print("images shape:", images.shape, "input_length:", list(input_length))
-                yield (inputs, outputs)
+
+                # TODO ctc and attention
+                if self.config.vocab_type == 'ctc':
+                    input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
+
+                    inputs = {
+                        'the_input': images,  # (bs, w, h, 1)
+                        'the_labels': labels,  # (bs, 8)
+                        'input_length': input_length,  # (bs, 1)
+                        'label_length': label_length,  # (bs, 1)
+                    }
+                    outputs = {'ctc': np.zeros([self.batch_size])}  # (bs, 1) -> 모든 원소 0
+                    # print("images shape:", images.shape, "input_length:", list(input_length))
+
+                    yield (inputs, outputs)
+                else:
+                    # for attention, we need decoder inputs: it is a constant value representing \t: start of sentence
+                    # print(self.config.n_letters)
+                    # print(self.config)
+                    decoder_input_data = np.zeros([self.batch_size, 1, int(self.config.n_letters)])
+                    decoder_input_data[:, 0, get_input_token_index()['\t']] = 1.
+
+                    inputs = {
+                        'the_input': images,
+                        'decoder_input': decoder_input_data,
+                    }
+                    outputs = self.onehot_initialization(labels, self.config.n_letters)
+                    yield (inputs, outputs)
+
+    def onehot_initialization(self, a, ncols):
+        out = np.zeros(a.shape + (ncols,), dtype=int)
+        out[self.all_idx(a, axis=2)] = 1
+        return out
+
+    def all_idx(self, idx, axis):
+        grid = np.ogrid[tuple(map(slice, idx.shape))]
+        grid.insert(axis, idx)
+        return tuple(grid)
 
     def process_batch_images(self, images, max_width):
         """Apply augmentations"""
