@@ -7,7 +7,7 @@ import json
 
 LETTERS = ''
 input_token_index = dict()
-target_token_index = dict()
+reverse_target_char_index = dict()
 
 
 def build_vocab(config):
@@ -55,14 +55,14 @@ def get_image_paths_and_labels(json_path):
 
 
 def update_vocab(letters):
-    global LETTERS, input_token_index, target_token_index
+    global LETTERS, input_token_index, reverse_target_char_index
     LETTERS = list(letters)
     input_token_index = dict(
         [(char, i) for i, char in enumerate(LETTERS)]
     )
 
-    target_token_index = dict(
-        [(char, i) for i, char in enumerate(LETTERS)]
+    reverse_target_char_index = dict(
+        [(i, char) for i, char in enumerate(LETTERS)]
     )
 
 
@@ -71,9 +71,9 @@ def get_input_token_index():
     return input_token_index
 
 
-def get_target_token_index():
-    global target_token_index
-    return target_token_index
+def get_reverse_target_char_index():
+    global reverse_target_char_index
+    return reverse_target_char_index
 
 
 def labels_to_text(labels):

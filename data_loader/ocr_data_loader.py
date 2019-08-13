@@ -154,18 +154,28 @@ class OCRDataLoader(object):
                         'the_input': images,
                         'decoder_input': decoder_input_data,
                     }
-                    outputs = self.onehot_initialization(labels, self.config.n_letters)
+                    # TODO dont use one-hot encoder here because token 0 will be encode
+                    # encode one hot to label_length and the follow part all are 0
+                    outputs = np.zeros([self.batch_size, self.max_text_len, self.config.n_letters])
+
+                    for k, label in enumerate(labels):
+                        for ci, c in enumerate(label):
+                            outputs[k, ci, c] = 1.
+                            if c == self.config.n_letters - 1:
+                                break
+
+                    # outputs = self.onehot_initialization(labels, self.config.n_letters)
                     yield (inputs, outputs)
 
-    def onehot_initialization(self, a, ncols):
-        out = np.zeros(a.shape + (ncols,), dtype=int)
-        out[self.all_idx(a, axis=2)] = 1
-        return out
-
-    def all_idx(self, idx, axis):
-        grid = np.ogrid[tuple(map(slice, idx.shape))]
-        grid.insert(axis, idx)
-        return tuple(grid)
+    # def onehot_initialization(self, a, ncols):
+    #     out = np.zeros(a.shape + (ncols,), dtype=int)
+    #     out[self.all_idx(a, axis=2)] = 1
+    #     return out
+    #
+    # def all_idx(self, idx, axis):
+    #     grid = np.ogrid[tuple(map(slice, idx.shape))]
+    #     grid.insert(axis, idx)
+    #     return tuple(grid)
 
     def process_batch_images(self, images, max_width):
         """Apply augmentations"""

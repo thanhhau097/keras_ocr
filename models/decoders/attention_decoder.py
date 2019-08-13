@@ -16,7 +16,7 @@ class AttentionDecoder():
 
         # Set up the decoder, using `encoder_states` as initial state.
         self.decoder_inputs = Input(shape=(1, num_decoder_tokens), name='decoder_input')
-        self.decoder_gru = GRU(latent_dim, return_sequences=True, return_state=True)
+        self.decoder_gru = GRU(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
         self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
 
     def __call__(self, input_tensor, *args, **kwargs):
@@ -26,14 +26,14 @@ class AttentionDecoder():
                     kernel_initializer='he_normal', name='gru1')(input_tensor)
         gru_1b = GRU(256, return_sequences=True,
                      go_backwards=True, kernel_initializer='he_normal',
-                     name='gru1_b')(input_tensor)
+                     name='gru1b')(input_tensor)
         gru1_merged = add([gru_1, gru_1b])
         gru_2, state_2 = GRU(256, return_sequences=True,
-                         kernel_initializer='he_normal',
-                         return_state=True, name='gru2')(gru1_merged)
+                             kernel_initializer='he_normal',
+                             return_state=True, name='gru2')(gru1_merged)
         gru_2b, state_2b = GRU(256, return_sequences=True, go_backwards=True,
-                          kernel_initializer='he_normal',
-                          return_state=True, name='gru2_b')(gru1_merged)
+                               kernel_initializer='he_normal',
+                               return_state=True, name='gru2b')(gru1_merged)
 
         # transforms RNN output to character activations:
         encoder_outputs = concatenate([gru_2, gru_2b])

@@ -1,7 +1,7 @@
 from base.base_trainer import BaseTrain
 import os
 from keras.callbacks import ModelCheckpoint, TensorBoard
-from .training_callbacks import TrainingCallback
+from .training_callbacks import TrainingCallback, AttentionTrainingCallback
 
 
 class OCRTrainer(BaseTrain):
@@ -40,6 +40,13 @@ class OCRTrainer(BaseTrain):
         #                      self.config.validation_steps, self.config.trainer.batch_size,
         #                      self.val_data.next_batch(), filepath='experiments/models/model.h5')
         # )
+
+        self.callbacks.append(
+            AttentionTrainingCallback(self.config.letters,
+                                      self.config.validation_steps, self.config.trainer.batch_size,
+                                      self.val_data.next_batch(), filepath='experiments/models/model.h5')
+        )
+
 
         # if hasattr(self.config,"comet_api_key"):
         # if ("comet_api_key" in self.config):

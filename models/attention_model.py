@@ -37,11 +37,9 @@ class AttentionModel(BaseModel):
         inner, decoder_inputs = decoder(inner)
         print("After Decoder:", inner)
 
-        # max_text_len = self.config.hyperparameter.max_text_len
-        # labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')
         y_pred = inner
-        self.test_func = K.function([inputs, decoder_inputs], [y_pred])
-        self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
+        # self.test_func = K.function([inputs, decoder_inputs], [y_pred])
+        # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
 
         self.model = Model([inputs, decoder_inputs], y_pred)
         self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
