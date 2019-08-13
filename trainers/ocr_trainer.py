@@ -44,7 +44,7 @@ class OCRTrainer(BaseTrain):
         self.callbacks.append(
             AttentionTrainingCallback(self.config.letters,
                                       self.config.validation_steps, self.config.trainer.batch_size,
-                                      self.val_data.next_batch(), filepath='experiments/models/model.h5')
+                                      self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
         )
 
 
