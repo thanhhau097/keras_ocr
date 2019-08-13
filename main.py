@@ -1,49 +1,89 @@
-import comet_ml
-from data_loader.ocr_data_loader import OCRDataLoader
-from models.ocr_model import OCRModel
-from models.attention_model import AttentionModel
-from trainers.ocr_trainer import OCRTrainer
-from utils.config import process_config
-from utils.dirs import create_dirs
-from utils.utils import get_args
-from utils.ocr_utils import build_vocab
+#!/usr/bin/python
 
-def main():
-    # capture the config path from the run arguments
-    # then process the json configuration file
-    try:
-        # args = get_args()
-        # config = process_config(args.config)
-        config = process_config('configs/config.json')
-    except:
-        print("missing or invalid arguments")
-        exit(0)
+from __future__ import print_function
+import argparse, os, json, traceback, sys
 
-    # create the experiments dirs
-    create_dirs([config.callbacks.tensorboard_log_dir, config.callbacks.checkpoint_dir])
+import sys 
+import os
+import time 
+import argparse
+import random
+import datetime
+import subprocess
 
-    # TODO
-    # type 'ctc' and type 'attention' (+2)
-    print('Building vocabulary')
-    config.vocab_type = 'attention'
-    config.n_letters = build_vocab(config)
+from utils.utils import (
+    unzip, write_log, JsonHandler
+)
 
-    print('Create the model.')
-    model = AttentionModel(config)
 
-    config.downsample_factor = model.get_downsample_factor()
-    print('Create the data generator.')
-    data_loader = OCRDataLoader(config)
-    val_data_loader = OCRDataLoader(config, phase='val')
+class SagemakerInference(object):
+    """ Configurations for setup env and training models 
 
-    config.validation_steps = val_data_loader.get_steps()
-    print('Create the trainer')
-    trainer = OCRTrainer(model, data_loader, val_data_loader, config)
+        Arguments:
+            config_path (str): path of configuration json file
 
-    print('Start training the model.')
-    trainer.train()
-    # test
+    """
+    def __init__(self, config_path):
+        # read the config file to a config dict 
+        self.json_tools = JsonHandler()
+        self.configs = self.json_tools.read_json_file(config_path)
+
+        # setup dependencies  
+        if self.configs['setup'] == True:
+            if os.path.isfile(self.configs['requirement_file']):
+                print("Installing requirements...")
+                subprocess.run("pip install -r {0}".format(\
+                    self.configs['requirement_file']), shell=True)
+
+    def unzip_data(self):
+        if self.configs["data_zip_file"]:
+            zip_file = self.configs["data_zip_file"]
+            folder = os.path.dirname(zip_file)
+            print("Doing unzip file {0}:".format(zip_file))
+            unzip(zip_file, folder)
+
+    def process(self):
+        # import torch 
+        # import numpy as np
+        # import torch.backends.cudnn as cudnn
+
+        # print('torch.cuda.is_available(): ', torch.cuda.is_available())
+
+        # # Seed and GPU setting
+        # random.seed(self.configs["manual_seed"])
+        # np.random.seed(self.configs["manual_seed"])
+        # torch.manual_seed(self.configs["manual_seed"])
+
+        # if torch.cuda.is_available():
+        #     torch.cuda.manual_seed(self.configs["manual_seed"])
+        #     cudnn.benchmark = True
+        #     cudnn.deterministic = True
+
+        # unzip data
+        self.unzip_data()
+        
+        os.system('nvidia-smi')
+        # subprocess.run('sh run.sh', shell=True)
+        # print("CONVERT TXT TO JSON ...")
+        # subprocess.run('python convert_txt_to_json.py', shell=True)
+        print("RUN TRAIN.PY FILE")
+        subprocess.run('python train.py', shell=True)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Configurations for training OpenNMT-py')
+    parser.add_argument('--config')
+    args = parser.parse_known_args()[0]
+    config_path = args.config
+
+    inference = SagemakerInference(config_path)
+
+    try:
+        inference.process()
+        sys.exit(0)
+    except Exception as e:
+        # Write out an error file. This will be returned as 
+        # the failure reason in the describe training job result.
+        trc = traceback.format_exc()
+        print('Exception during training: ' + str(e) + '\n' + trc, file=sys.stderr)
+        sys.exit(255)
