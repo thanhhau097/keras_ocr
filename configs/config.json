@@ -14,7 +14,7 @@
   },
   "trainer": {
     "name": "ocr_trainer.OCRTrainer",
-    "num_epochs": 20,
+    "num_epochs": 100,
     "batch_size": 16,
     "verbose_training": true
   },
