@@ -188,7 +188,10 @@ class AttentionTrainingCallback(keras.callbacks.Callback):
                 source_str = str_labels[j]
                 edit_dist = editdistance.eval(decoded_res[j], source_str)
                 mean_ed += float(edit_dist)
-                mean_norm_ed += float(edit_dist) / len(source_str)
+                if len(source_str) != 0:
+                    mean_norm_ed += float(edit_dist) / len(source_str)
+                else:
+                    mean_norm_ed += float(edit_dist)
                 if decoded_res[j] == source_str:
                     true_fields += 1
 
