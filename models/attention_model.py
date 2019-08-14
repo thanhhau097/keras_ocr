@@ -42,7 +42,7 @@ class AttentionModel(BaseModel):
         # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
 
         self.model = Model([inputs, decoder_inputs], y_pred)
-        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+        self.model.compile(optimizer='adam', loss='categorical_crossentropy')
         self.model.summary()
 
     def get_downsample_factor(self):
