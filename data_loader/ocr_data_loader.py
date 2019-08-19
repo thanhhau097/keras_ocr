@@ -81,7 +81,10 @@ class OCRDataLoader(object):
         """
         shape = image.shape
         if shape[0] > 64 or shape[0] < 32: # height
-            image = cv2.resize(image, (int(64/shape[0] * shape[1]), 64))
+            try:
+                image = cv2.resize(image, (int(64/shape[0] * shape[1]), 64))
+            except:
+                return np.zeros([1, 1, self.channels])
         return image / 255.0
 
     def next_sample(self):
