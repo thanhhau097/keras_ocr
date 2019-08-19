@@ -42,6 +42,7 @@ class AttentionModel(BaseModel):
         # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
 
         self.model = Model([inputs, decoder_inputs], y_pred)
+        # https://arxiv.org/pdf/1904.08364.pdf
         self.model.compile(optimizer='adam', loss='categorical_crossentropy')
         self.model.summary()
 

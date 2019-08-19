@@ -65,7 +65,7 @@ class OCRModel(BaseModel):
         #     return Model(inputs=[inputs], outputs=y_pred)
 
         self.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred},
-                      optimizer=self.config.model.optimizer)
+                           optimizer=self.config.model.optimizer)
         self.model.summary()
 
     def get_downsample_factor(self):
