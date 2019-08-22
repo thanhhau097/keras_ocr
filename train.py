@@ -23,7 +23,6 @@ def main():
     # create the experiments dirs
     create_dirs([config.callbacks.tensorboard_log_dir, config.callbacks.checkpoint_dir])
 
-    # TODO
     # type 'ctc' and type 'attention' (+2)
     print('Building vocabulary')
     config.vocab_type = 'joint'
