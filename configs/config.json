@@ -27,7 +27,7 @@
     "tensorboard_write_graph": true
   },
   "data": {
-    "root": "/opt/ml/input/data/train/data/Japanese/",
+    "root": "data/",
     "train_json_path": "train.json",
     "val_json_path": "val.json",
     "test_json_path": "test.json",

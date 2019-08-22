@@ -4,12 +4,11 @@ from keras.models import Model
 from keras.layers import *
 from models.encoders.mobilenet_encoder import MobileNetEncoder
 from models.decoders.attention_decoder import AttentionDecoder
-from models.encoders.rnn_encoder import RNNEncoder
+from models.decoders.simple_decoder import SimpleDecoder
 
-
-class AttentionModel(BaseModel):
+class JointModel(BaseModel):
     def __init__(self, config):
-        super(AttentionModel, self).__init__(config)
+        super(JointModel, self).__init__(config)
         self.config = config
         self.build_model()
 
@@ -33,13 +32,9 @@ class AttentionModel(BaseModel):
         # inner = TimeDistributed(Flatten(), name='timedistrib')(inner)
         print("After CNN to RNN:", inner)
 
-        # RNN Encoder
-        rnn_encoder = RNNEncoder(self.config)
-        encoder_outputs, state = rnn_encoder(inner)
-
         # DECODER
         decoder = AttentionDecoder(self.config)
-        inner, decoder_inputs = decoder(encoder_outputs, state)
+        inner, decoder_inputs = decoder(inner)
         print("After Decoder:", inner)
 
         y_pred = inner
@@ -58,4 +53,4 @@ class AttentionModel(BaseModel):
 if __name__ == '__main__':
     from utils.config import process_config
     config = process_config('../configs/config.json')
-    model = AttentionModel(config=config)
+    model = JointModel(config=config)
