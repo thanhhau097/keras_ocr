@@ -1,6 +1,6 @@
 from base.base_trainer import BaseTrain
 import os
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
 from .training_callbacks.ctc_callbacks import CTCCallback
 from .training_callbacks.attention_callbacks import AttentionCallback
 from .training_callbacks.joint_callbacks import JointCallback
@@ -38,22 +38,27 @@ class OCRTrainer(BaseTrain):
         )
 
         # self.callbacks.append(
-        #     TrainingCallback(self.model.test_func, self.config.letters,
-        #                      self.config.validation_steps, self.config.trainer.batch_size,
-        #                      self.val_data.next_batch(), filepath='experiments/models/model.h5')
+        #     LearningRateScheduler()
         # )
 
-        # self.callbacks.append(
-        #     AttentionTrainingCallback(self.config.letters,
-        #                               self.config.validation_steps, self.config.trainer.batch_size,
-        #                               self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
-        # )
-
-        self.callbacks.append(
-            JointCallback(self.model.test_func, self.config.letters,
-                          self.config.validation_steps, self.config.trainer.batch_size,
-                          self.val_data.next_batch(), filepath='experiments/models/model.h5')
-        )
+        if self.config.vocab_type == 'ctc':
+            self.callbacks.append(
+                CTCCallback(self.model.test_func, self.config.letters,
+                            self.config.validation_steps, self.config.trainer.batch_size,
+                            self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+            )
+        elif self.config.vocab_type == 'attention':
+            self.callbacks.append(
+                AttentionCallback(self.config.letters,
+                                  self.config.validation_steps, self.config.trainer.batch_size,
+                                  self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+            )
+        else:
+            self.callbacks.append(
+                JointCallback(self.model.test_func, self.config.letters,
+                              self.config.validation_steps, self.config.trainer.batch_size,
+                              self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+            )
 
         # if hasattr(self.config,"comet_api_key"):
         # if ("comet_api_key" in self.config):
@@ -65,7 +70,7 @@ class OCRTrainer(BaseTrain):
 
     def train(self):
         self.model.model.fit_generator(generator=self.data.next_batch(),
-                                       steps_per_epoch=1,
+                                       steps_per_epoch=1000,
                                        epochs=self.config.trainer.num_epochs,
                                        verbose=self.config.trainer.verbose_training,
                                        callbacks=self.callbacks)

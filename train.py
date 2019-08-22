@@ -25,18 +25,18 @@ def main():
 
     # type 'ctc' and type 'attention' (+2)
     print('Building vocabulary')
-    config.vocab_type = 'joint'
+    config.vocab_type = 'attention'
     config.n_letters = build_vocab(config)
 
     print('Create the model.')
-    model = JointModel(config)
+    model = AttentionModel(config)
 
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')
     data_loader = OCRDataLoader(config)
     val_data_loader = OCRDataLoader(config, phase='val')
 
-    config.validation_steps = 1  # val_data_loader.get_steps()
+    config.validation_steps = val_data_loader.get_steps()
     print('Create the trainer')
     trainer = OCRTrainer(model, data_loader, val_data_loader, config)
 

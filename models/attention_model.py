@@ -1,5 +1,6 @@
 from keras.layers import *
 from keras.models import Model
+from keras.optimizers import Adam
 
 from base.base_model import BaseModel
 from models.decoders.attention_decoder import AttentionDecoder
@@ -48,7 +49,8 @@ class AttentionModel(BaseModel):
 
         self.model = Model([inputs, decoder_inputs], y_pred)
         # https://arxiv.org/pdf/1904.08364.pdf
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy')
+        optimizer = Adam(0.2, decay=0.5)
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy')
         self.model.summary()
 
     def get_downsample_factor(self):
