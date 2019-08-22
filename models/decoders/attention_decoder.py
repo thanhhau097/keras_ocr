@@ -17,7 +17,7 @@ class AttentionDecoder():
 
         # Set up the decoder, using `encoder_states` as initial state.
         self.decoder_inputs = Input(shape=(1, num_decoder_tokens), name='decoder_input')
-        self.decoder_gru = CuDNNGRU(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
+        self.decoder_gru = GRU(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
         self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
 
     def __call__(self, encoder_outputs, state, *args, **kwargs):
@@ -31,7 +31,7 @@ class AttentionDecoder():
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
             all_outputs.append(inputs)
-        decoder_outputs = Concatenate(axis=1)(all_outputs)
+        decoder_outputs = Concatenate(axis=1, name='attention')(all_outputs)
 
         print("DECODER_OUTPUTS: ", decoder_outputs)
         return decoder_outputs, self.decoder_inputs

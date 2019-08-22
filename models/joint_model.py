@@ -4,7 +4,8 @@ from keras.models import Model
 from keras.layers import *
 from models.encoders.mobilenet_encoder import MobileNetEncoder
 from models.decoders.attention_decoder import AttentionDecoder
-from models.decoders.simple_decoder import SimpleDecoder
+from models.encoders.rnn_encoder import RNNEncoder
+
 
 class JointModel(BaseModel):
     def __init__(self, config):
@@ -32,18 +33,46 @@ class JointModel(BaseModel):
         # inner = TimeDistributed(Flatten(), name='timedistrib')(inner)
         print("After CNN to RNN:", inner)
 
-        # DECODER
+        # RNN Encoder
+        rnn_encoder = RNNEncoder(self.config)
+        encoder_outputs, state = rnn_encoder(inner)
+        print('after RNN encoder:', encoder_outputs)
+
+        # we have 2 branch here, 1 for CTC and 1 for Attention
+        # ------------------- CTC -------------------
+        # input is encoder_output
+        num_class = self.config.n_letters + 1 - 2  # (-2 because of start and end token)
+        ctc_inner = Dense(num_class, kernel_initializer='he_normal', name='dense2')(encoder_outputs)
+        y_pred_ctc = Activation('softmax', name='softmax')(ctc_inner)
+
+        max_text_len = self.config.hyperparameter.max_text_len
+        labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')  # (None ,8)
+        input_length = Input(name='input_length', shape=[1], dtype='int64')  # (None, 1)
+        label_length = Input(name='label_length', shape=[1], dtype='int64')  # (None, 1)
+
+        # Keras doesn't currently support loss funcs with extra parameters
+        # so CTC loss is implemented in a lambda layer
+        loss_out = Lambda(
+            ctc_lambda_func, output_shape=(1,),
+            name='ctc')([y_pred_ctc, labels, input_length, label_length])
+
+        # test function
+        self.test_func = K.function([inputs, labels, input_length, label_length], [y_pred_ctc, loss_out])
+        self.pred_func = K.function([inputs], [y_pred_ctc])
+
+        # ----------------- Attention --------------------
         decoder = AttentionDecoder(self.config)
-        inner, decoder_inputs = decoder(inner)
-        print("After Decoder:", inner)
+        attention_inner, decoder_inputs = decoder(encoder_outputs, state)
+        print("After Attention Decoder:", attention_inner)
+        # TODO name y_pred_attention here
+        y_pred_attention = attention_inner
 
-        y_pred = inner
-        # self.test_func = K.function([inputs, decoder_inputs], [y_pred])
-        # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
-
-        self.model = Model([inputs, decoder_inputs], y_pred)
-        # https://arxiv.org/pdf/1904.08364.pdf
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy')
+        # --------- JOINT MODEL -----------
+        self.model = Model(inputs=[inputs, labels, input_length, label_length, decoder_inputs],
+                           output=[loss_out, y_pred_attention])
+        lossWeights = {"ctc": 1.0, "attention": 1.0}
+        self.model.compile(optimizer='adam', loss={'ctc': lambda y_true, y_pred: y_pred,
+                                                   'attention': 'categorical_crossentropy'})
         self.model.summary()
 
     def get_downsample_factor(self):

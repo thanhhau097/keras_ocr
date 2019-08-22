@@ -2,6 +2,7 @@ import comet_ml
 from data_loader.ocr_data_loader import OCRDataLoader
 from models.ocr_model import OCRModel
 from models.attention_model import AttentionModel
+from models.joint_model import JointModel
 from trainers.ocr_trainer import OCRTrainer
 from utils.config import process_config
 from utils.dirs import create_dirs
@@ -25,11 +26,11 @@ def main():
     # TODO
     # type 'ctc' and type 'attention' (+2)
     print('Building vocabulary')
-    config.vocab_type = 'attention'
+    config.vocab_type = 'joint'
     config.n_letters = build_vocab(config)
 
     print('Create the model.')
-    model = AttentionModel(config)
+    model = JointModel(config)
 
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')

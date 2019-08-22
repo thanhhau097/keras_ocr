@@ -141,7 +141,7 @@ class OCRDataLoader(object):
 
                     # outputs = self.onehot_initialization(labels, self.config.n_letters)
                     yield (inputs, outputs)
-                else: # joint: we need to return both output of CTC and attention
+                else:  # joint: we need to return both output of CTC and attention
                     input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
 
                     decoder_input_data = np.zeros([self.batch_size, 1, int(self.config.n_letters)])
@@ -151,7 +151,7 @@ class OCRDataLoader(object):
 
                     for k, label in enumerate(labels):
                         for ci, c in enumerate(label):
-                            outputs[k, ci, c] = 1.
+                            outputs_attention[k, ci, c] = 1.
                             if c == self.config.n_letters - 1:
                                 break
 
