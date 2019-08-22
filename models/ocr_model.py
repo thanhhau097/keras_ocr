@@ -1,6 +1,6 @@
 from keras.layers import *
 from keras.models import Model
-from models.encoders.mobilenet_encoder import MobileNetEncoder
+from models.rnn_encoders.mobilenet_encoder import MobileNetEncoder
 
 from base.base_model import BaseModel
 from models.decoders.simple_decoder import SimpleDecoder

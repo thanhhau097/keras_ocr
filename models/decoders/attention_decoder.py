@@ -26,7 +26,7 @@ class AttentionDecoder():
         inputs = self.decoder_inputs
         for _ in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
-            attention_v = self.score_module(encoder_outputs, state)
+            attention_v = self.bahdanau_score_module(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
@@ -36,7 +36,7 @@ class AttentionDecoder():
         print("DECODER_OUTPUTS: ", decoder_outputs)
         return decoder_outputs, self.decoder_inputs
 
-    def score_module(self, encoder_outputs, state):  # Bahdanau
+    def bahdanau_score_module(self, encoder_outputs, state):  # Bahdanau
         hidden_state_with_time_axis = Lambda(lambda x: K.expand_dims(x, axis=1))(state)  # K.expand_dims(state, 1)
         output_hidden = self.W2(hidden_state_with_time_axis)
         tanh_lambda = Lambda(lambda x: K.tanh(x))
@@ -49,3 +49,7 @@ class AttentionDecoder():
         attention_vector = Concatenate(axis=-1)([context_vector, state])
 
         return attention_vector
+
+    # TODO
+    def luong_score_module(self, encoder_outputs, state):
+        pass

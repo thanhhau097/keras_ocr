@@ -104,7 +104,6 @@ class OCRDataLoader(object):
                 images = self.process_batch_images(images, max_width)
                 images = np.transpose(images, [0, 2, 1, 3])
 
-                # TODO ctc and attention
                 if self.config.vocab_type == 'ctc':
                     input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
 
@@ -129,7 +128,8 @@ class OCRDataLoader(object):
                         'the_input': images,
                         'decoder_input': decoder_input_data,
                     }
-                    # TODO dont use one-hot encoder here because token 0 will be encode
+
+                    # dont use one-hot encoder here because token 0 will be encode
                     # encode one hot to label_length and the follow part all are 0
                     outputs = np.zeros([self.batch_size, self.max_text_len, self.config.n_letters])
 

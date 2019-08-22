@@ -3,7 +3,7 @@ from keras.models import Model
 
 from base.base_model import BaseModel
 from models.decoders.attention_decoder import AttentionDecoder
-from models.encoders.rnn_encoder import RNNEncoder
+from models.rnn_encoders.rnn_encoder import RNNEncoder
 from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
 from utils.ocr_utils import ctc_lambda_func
 
@@ -65,7 +65,7 @@ class JointModel(BaseModel):
         decoder = AttentionDecoder(self.config)
         attention_inner, decoder_inputs = decoder(encoder_outputs, state)
         print("After Attention Decoder:", attention_inner)
-        # TODO name y_pred_attention here
+
         y_pred_attention = attention_inner
 
         # --------- JOINT MODEL -----------

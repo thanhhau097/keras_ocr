@@ -1,8 +1,8 @@
 from base.base_trainer import BaseTrain
 import os
 from keras.callbacks import ModelCheckpoint, TensorBoard
-from .training_callbacks import TrainingCallback, AttentionTrainingCallback
-
+from .training_callbacks.ctc_callbacks import CTCCallback
+from .training_callbacks.attention_callbacks import AttentionCallback
 
 class OCRTrainer(BaseTrain):
     def __init__(self, model, data, val_data, config):
