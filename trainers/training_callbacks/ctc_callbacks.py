@@ -19,8 +19,8 @@ class CTCCallback(keras.callbacks.Callback):
         self.save_weights_only = save_weights_only
         self.min_loss = np.inf
 
-    def decode_batch_validation(self, test_func, data_batch, letters):
-        output = test_func(list(data_batch.values()))
+    def decode_batch_validation(self, data_batch):
+        output = self.test_func(list(data_batch.values()))
         out, loss = output
         ret = []
         for j in range(out.shape[0]):
@@ -40,9 +40,7 @@ class CTCCallback(keras.callbacks.Callback):
         true_fields = 0
         while num_left > 0:
             data_batch = next(self.text_img_gen)[0]
-            decoded_res, loss = self.decode_batch_validation(self.test_func,
-                                                             data_batch,
-                                                             self.letters)
+            decoded_res, loss = self.decode_batch_validation(data_batch)
             loss_batch = np.sum(loss)
 
             for j in range(num_left):

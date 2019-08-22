@@ -53,13 +53,9 @@ class JointModel(BaseModel):
 
         # Keras doesn't currently support loss funcs with extra parameters
         # so CTC loss is implemented in a lambda layer
-        loss_out = Lambda(
+        loss_ctc = Lambda(
             ctc_lambda_func, output_shape=(1,),
             name='ctc')([y_pred_ctc, labels, input_length, label_length])
-
-        # test function
-        self.test_func = K.function([inputs, labels, input_length, label_length], [y_pred_ctc, loss_out])
-        self.pred_func = K.function([inputs], [y_pred_ctc])
 
         # ----------------- Attention --------------------
         decoder = AttentionDecoder(self.config)
@@ -68,12 +64,19 @@ class JointModel(BaseModel):
 
         y_pred_attention = attention_inner
 
+        # ----------- TEST FUNCTION ---------
+        self.test_func = K.function([inputs, labels, input_length, label_length, decoder_inputs],
+                                    [y_pred_ctc, loss_ctc, y_pred_attention])
+        self.pred_func = K.function([inputs, decoder_inputs], [y_pred_ctc, y_pred_attention])
+
         # --------- JOINT MODEL -----------
         self.model = Model(inputs=[inputs, labels, input_length, label_length, decoder_inputs],
-                           output=[loss_out, y_pred_attention])
-        lossWeights = {"ctc": 1.0, "attention": 1.0}
-        self.model.compile(optimizer='adam', loss={'ctc': lambda y_true, y_pred: y_pred,
-                                                   'attention': 'categorical_crossentropy'})
+                           output=[loss_ctc, y_pred_attention])
+        loss_weights = {"ctc": 1.0, "attention": 1.0}
+        self.model.compile(optimizer='adam',
+                           loss={'ctc': lambda y_true, y_pred: y_pred,
+                                 'attention': 'categorical_crossentropy'},
+                           loss_weights=loss_weights)
         self.model.summary()
 
     def get_downsample_factor(self):

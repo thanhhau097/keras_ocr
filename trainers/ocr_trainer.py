@@ -3,6 +3,8 @@ import os
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from .training_callbacks.ctc_callbacks import CTCCallback
 from .training_callbacks.attention_callbacks import AttentionCallback
+from .training_callbacks.joint_callbacks import JointCallback
+
 
 class OCRTrainer(BaseTrain):
     def __init__(self, model, data, val_data, config):
@@ -47,6 +49,11 @@ class OCRTrainer(BaseTrain):
         #                               self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
         # )
 
+        self.callbacks.append(
+            JointCallback(self.model.test_func, self.config.letters,
+                          self.config.validation_steps, self.config.trainer.batch_size,
+                          self.val_data.next_batch(), filepath='experiments/models/model.h5')
+        )
 
         # if hasattr(self.config,"comet_api_key"):
         # if ("comet_api_key" in self.config):
@@ -58,7 +65,7 @@ class OCRTrainer(BaseTrain):
 
     def train(self):
         self.model.model.fit_generator(generator=self.data.next_batch(),
-                                       steps_per_epoch=5000,
+                                       steps_per_epoch=1,
                                        epochs=self.config.trainer.num_epochs,
                                        verbose=self.config.trainer.verbose_training,
                                        callbacks=self.callbacks)

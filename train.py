@@ -36,7 +36,7 @@ def main():
     data_loader = OCRDataLoader(config)
     val_data_loader = OCRDataLoader(config, phase='val')
 
-    config.validation_steps = val_data_loader.get_steps()
+    config.validation_steps = 1  # val_data_loader.get_steps()
     print('Create the trainer')
     trainer = OCRTrainer(model, data_loader, val_data_loader, config)
 

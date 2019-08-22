@@ -23,18 +23,11 @@ class AttentionCallback(keras.callbacks.Callback):
         predicts = self.model.predict(data_batch[0])
         labels = data_batch[1]  # labels one-hot vector
         predicted_labels = []
-        str_labels = []
+        ground_truth_labels = []
 
         # we need to calculate the cross entropy loss here
         loss = []
         for i in range(len(labels)):
-            # when we meet end of sentence token, we need to stop calculating loss # no need to do it because labels = 0
-            # wrong here, we one hot both 0 label
-            # there are 2 ways to solve this problem
-            # 1. change one hot label in data_generator
-            # 2. stop calculating loss here when we meet len of label and end of sentence token
-            # we should to the first one
-            # or can we use another loss for sequence?
             predicted_label = ''
             predict = predicts[i]
             for element in predict:
@@ -54,26 +47,33 @@ class AttentionCallback(keras.callbacks.Callback):
                 str_label += char
 
             predicted_labels.append(predicted_label)
-            str_labels.append(str_label)
-            item_loss = self.cross_entropy(predicts[i], labels[i])
+            ground_truth_labels.append(str_label)
+            # TODO wrong here, we need to calculate for each step?
+            item_loss = np.mean(self.categorical_crossentropy(labels[i], predicts[i]))
+            # item_loss = self.cross_entropy(predicts[i], labels[i])
             loss.append(item_loss)
 
         # loss /= self.batch_size
         # print(predicted_labels)
         # print(str_labels)
-        return predicted_labels, str_labels, loss
+        return predicted_labels, ground_truth_labels, loss
 
-    def cross_entropy(self, predictions, targets, epsilon=1e-12):
-        """
-        Computes cross entropy between targets (encoded as one-hot vectors)
-        and predictions.
-        Input: predictions (N, k) ndarray
-               targets (N, k) ndarray
-        Returns: scalar
-        """
-        predictions = np.clip(predictions, epsilon, 1. - epsilon)
-        ce = - np.mean(np.log(predictions) * targets)
-        return ce
+    # def cross_entropy(self, predictions, targets, epsilon=1e-12):
+    #     """
+    #     Computes cross entropy between targets (encoded as one-hot vectors)
+    #     and predictions.
+    #     Input: predictions (N, k) ndarray
+    #            targets (N, k) ndarray
+    #     Returns: scalar
+    #     """
+    #     predictions = np.clip(predictions, epsilon, 1. - epsilon)
+    #     ce = - np.mean(np.log(predictions) * targets)
+    #     return ce
+
+    def categorical_crossentropy(self, target, output):
+        output /= output.sum(axis=-1, keepdims=True)
+        output = np.clip(output, 1e-7, 1 - 1e-7)
+        return np.sum(target * -np.log(output), axis=-1, keepdims=False)
 
     def show_edit_distance(self, num):
         num_left = num
@@ -131,8 +131,8 @@ class AttentionCallback(keras.callbacks.Callback):
         accuracy_by_field = total_true_fields / (self.validation_steps * self.batch_size)
 
         print('\nMean edit distance:'
-              '%.3f \tMean normalized edit distance: %0.3f'
-              '\tLoss batch: %0.3f'
+              '%.3f \nMean normalized edit distance: %0.3f'
+              '\nLoss batch: %0.3f'
               '\nAccuracy by fields: %0.3f'
               % (total_mean_ed, total_mean_norm_ed, total_loss, accuracy_by_field))
 
