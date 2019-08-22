@@ -1,10 +1,10 @@
-from utils.ocr_utils import ctc_lambda_func
-from base.base_model import BaseModel
-from keras.models import Model
 from keras.layers import *
-from models.encoders.mobilenet_encoder import MobileNetEncoder
+from keras.models import Model
+
+from base.base_model import BaseModel
 from models.decoders.attention_decoder import AttentionDecoder
 from models.encoders.rnn_encoder import RNNEncoder
+from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
 
 
 class AttentionModel(BaseModel):

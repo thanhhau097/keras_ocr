@@ -1,10 +1,10 @@
-from utils.ocr_utils import ctc_lambda_func
-from base.base_model import BaseModel
-from keras.models import Model
 from keras.layers import *
-from models.encoders.simple_encoder import SimpleEncoder
+from keras.models import Model
 from models.encoders.mobilenet_encoder import MobileNetEncoder
+
+from base.base_model import BaseModel
 from models.decoders.simple_decoder import SimpleDecoder
+from utils.ocr_utils import ctc_lambda_func
 
 
 class OCRModel(BaseModel):
