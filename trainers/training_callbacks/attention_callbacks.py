@@ -4,6 +4,7 @@ import numpy as np
 import itertools
 from utils.ocr_utils import labels_to_text, get_reverse_target_char_index
 from tqdm import tqdm
+import textdistance
 
 
 # TODO https://github.com/keras-team/keras/issues/9914
@@ -81,6 +82,7 @@ class AttentionCallback(keras.callbacks.Callback):
         mean_ed = 0.0
         loss_batch = 0
         true_fields = 0
+        acc_by_char = 0
         while num_left > 0:
             data_batch = next(self.text_img_gen)
 
@@ -93,6 +95,8 @@ class AttentionCallback(keras.callbacks.Callback):
                 # source_str = labels_to_text(data_batch['the_labels'][j])[:label_length]
                 source_str = str_labels[j]
                 edit_dist = editdistance.eval(decoded_res[j], source_str)
+                levenshtein_distance = textdistance.levenshtein.normalized_similarity(source_str, decoded_res[j])
+                acc_by_char += levenshtein_distance
                 mean_ed += float(edit_dist)
                 if len(source_str) != 0:
                     mean_norm_ed += float(edit_dist) / len(source_str)
@@ -105,8 +109,9 @@ class AttentionCallback(keras.callbacks.Callback):
         mean_norm_ed = mean_norm_ed / num
         mean_ed = mean_ed / num
         loss_batch = loss_batch / num
+        acc_by_char = acc_by_char / num
 
-        return mean_norm_ed, mean_ed, loss_batch, true_fields
+        return mean_norm_ed, mean_ed, loss_batch, true_fields, acc_by_char
 
     def on_epoch_end(self, epoch, logs=None):
         """Calculate accuracy for final train batch and accuracy for validation set
@@ -116,25 +121,29 @@ class AttentionCallback(keras.callbacks.Callback):
         total_mean_ed = 0
         total_loss = 0
         total_true_fields = 0
+        total_acc_by_char = 0
 
         print("Evaluating Validation set ...")
         for _ in tqdm(range(self.validation_steps)):
-            mean_norm_ed, mean_ed, loss_batch, true_fields = self.show_edit_distance(self.batch_size)
+            mean_norm_ed, mean_ed, loss_batch, true_fields, acc_by_char = self.show_edit_distance(self.batch_size)
             total_mean_norm_ed += mean_norm_ed
             total_mean_ed += mean_ed
             total_loss += loss_batch
             total_true_fields += true_fields
+            total_acc_by_char += acc_by_char
 
         total_mean_norm_ed /= self.validation_steps
         total_mean_ed /= self.validation_steps
         total_loss /= self.validation_steps
         accuracy_by_field = total_true_fields / (self.validation_steps * self.batch_size)
+        total_acc_by_char /= self.validation_steps
 
         print('\nMean edit distance:'
               '%.3f \nMean normalized edit distance: %0.3f'
               '\nLoss batch: %0.3f'
               '\nAccuracy by fields: %0.3f'
-              % (total_mean_ed, total_mean_norm_ed, total_loss, accuracy_by_field))
+              '\nAccuracy by chars: %0.3f'
+              % (total_mean_ed, total_mean_norm_ed, total_loss, accuracy_by_field, total_acc_by_char))
 
         if total_loss < self.min_loss:
             self.min_loss = total_loss
