@@ -49,7 +49,7 @@ class AttentionModel(BaseModel):
 
         self.model = Model([inputs, decoder_inputs], y_pred)
         # https://arxiv.org/pdf/1904.08364.pdf
-        optimizer = Adam(0.2, decay=0.5)
+        optimizer = Adam()  # 0.2, decay=0.5
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy')
         self.model.summary()
 
