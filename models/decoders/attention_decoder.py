@@ -15,6 +15,9 @@ class AttentionDecoder(object):
         self.W2 = Dense(latent_dim)
         self.V = Dense(1)
 
+        # for luong general attention
+        self.Wa = Dense(latent_dim)
+
         # Set up the decoder, using `encoder_states` as initial state.
         self.decoder_inputs = Input(shape=(1, num_decoder_tokens), name='decoder_input')
         self.decoder_gru = CuDNNGRU(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
@@ -26,7 +29,7 @@ class AttentionDecoder(object):
         inputs = self.decoder_inputs
         for _ in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
-            attention_v = self.luong_dot_score_module(encoder_outputs, state)
+            attention_v = self.luong_general_attention(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
@@ -67,6 +70,23 @@ class AttentionDecoder(object):
         """
         # print('state:', state)
         # print('encoder_outputs:', encoder_outputs)
+        attention = dot([state, encoder_outputs], axes=[1, 2])
+        attention = Activation('softmax')(attention)
+        # print('attention', attention)
+
+        context = dot([attention, encoder_outputs], axes=[1, 1])
+        # print('context', context)
+
+        decoder_combined_context = concatenate([context, state])
+        # print('decoder_combined_context', decoder_combined_context)
+
+        return decoder_combined_context
+
+    def luong_general_attention(self, encoder_outputs, state):
+        # print('state:', state)
+        # print('encoder_outputs:', encoder_outputs)
+        # difference here
+        Wa_encoder_outputs = self.Wa(encoder_outputs)
         attention = dot([state, encoder_outputs], axes=[1, 2])
         attention = Activation('softmax')(attention)
         # print('attention', attention)
