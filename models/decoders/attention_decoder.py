@@ -1,8 +1,8 @@
 from keras.layers import *
-from keras.layers.merge import add, concatenate
+from keras.layers.merge import add, concatenate, dot
 
 
-class AttentionDecoder():
+class AttentionDecoder(object):
     def __init__(self, config):
         # used for attention: Bahdanau
         self.config = config
@@ -26,7 +26,7 @@ class AttentionDecoder():
         inputs = self.decoder_inputs
         for _ in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
-            attention_v = self.bahdanau_score_module(encoder_outputs, state)
+            attention_v = self.luong_dot_score_module(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
@@ -36,11 +36,18 @@ class AttentionDecoder():
         print("DECODER_OUTPUTS: ", decoder_outputs)
         return decoder_outputs, self.decoder_inputs
 
+    # TODO wrong: build from the previous hidden states
     def bahdanau_score_module(self, encoder_outputs, state):  # Bahdanau
+        """
+        build from the previous hidden state ht−1 → at → ct → ht
+
+        :param encoder_outputs:
+        :param state:
+        :return:
+        """
         hidden_state_with_time_axis = Lambda(lambda x: K.expand_dims(x, axis=1))(state)  # K.expand_dims(state, 1)
-        output_hidden = self.W2(hidden_state_with_time_axis)
         tanh_lambda = Lambda(lambda x: K.tanh(x))
-        score = Add()([tanh_lambda(self.W1(encoder_outputs)), output_hidden])
+        score = Add()([tanh_lambda(self.W1(encoder_outputs)), self.W2(hidden_state_with_time_axis)])
         score = self.V(score)
         attention_weights = Softmax(axis=1)(score)
         context_vector = Multiply()([attention_weights, encoder_outputs])
@@ -50,6 +57,22 @@ class AttentionDecoder():
 
         return attention_vector
 
-    # TODO
-    def luong_score_module(self, encoder_outputs, state):
-        pass
+    # TODO https://arxiv.org/pdf/1508.04025.pdf
+    def luong_dot_score_module(self, encoder_outputs, state):
+        """
+         from ht → at → ct → h˜t then make a prediction
+        :param encoder_outputs:
+        :param state:
+        :return:
+        """
+        attention = dot([state, encoder_outputs], axes=[2, 2])
+        attention = Activation('softmax', name='attention')(attention)
+        # print('attention', attention)
+
+        context = dot([attention, encoder_outputs], axes=[2, 1])
+        # print('context', context)
+
+        decoder_combined_context = concatenate([context, state])
+        # print('decoder_combined_context', decoder_combined_context)
+
+        return decoder_combined_context
