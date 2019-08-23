@@ -29,7 +29,7 @@ class AttentionDecoder(object):
         inputs = self.decoder_inputs
         for _ in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
-            attention_v = self.luong_general_attention(encoder_outputs, state)
+            attention_v = self.luong_dot_score_module(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
