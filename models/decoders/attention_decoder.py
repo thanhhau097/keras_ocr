@@ -1,5 +1,6 @@
 from keras.layers import *
 from keras.layers.merge import add, concatenate, dot
+from utils.gpu_utils import gru
 
 
 class AttentionDecoder(object):
@@ -20,7 +21,7 @@ class AttentionDecoder(object):
 
         # Set up the decoder, using `encoder_states` as initial state.
         self.decoder_inputs = Input(shape=(1, num_decoder_tokens), name='decoder_input')
-        self.decoder_gru = CuDNNGRU(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
+        self.decoder_gru = gru(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
         self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
 
     def __call__(self, encoder_outputs, state, *args, **kwargs):
