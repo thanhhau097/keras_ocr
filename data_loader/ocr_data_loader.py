@@ -142,6 +142,11 @@ class OCRDataLoader(object):
                     # outputs = self.onehot_initialization(labels, self.config.n_letters)
                     yield (inputs, outputs)
                 else:  # joint: we need to return both output of CTC and attention
+                    # TODO consider label_length here, because there is mix type, then label += '\n'
+                    new_label_length = np.zeros((self.batch_size, 1))
+                    for i, label_l in enumerate(label_length):
+                        if label_l == 1:
+                            new_label_length[i] = label_length - 1
                     input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
 
                     decoder_input_data = np.zeros([self.batch_size, 1, int(self.config.n_letters)])
