@@ -1,5 +1,6 @@
 from keras.layers import *
 from keras.models import Model
+from keras.optimizers import Adam
 from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
 
 from base.base_model import BaseModel
@@ -7,9 +8,9 @@ from models.decoders.simple_decoder import SimpleDecoder
 from utils.ocr_utils import ctc_lambda_func
 
 
-class OCRModel(BaseModel):
+class CTCModel(BaseModel):
     def __init__(self, config):
-        super(OCRModel, self).__init__(config)
+        super(CTCModel, self).__init__(config)
         self.config = config
         self.build_model()
 
@@ -64,8 +65,10 @@ class OCRModel(BaseModel):
         # else:
         #     return Model(inputs=[inputs], outputs=y_pred)
 
+        optimizer = Adam(decay=0.7)
+
         self.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred},
-                           optimizer=self.config.model.optimizer)
+                           optimizer=optimizer)
         self.model.summary()
 
     def get_downsample_factor(self):
@@ -75,4 +78,4 @@ class OCRModel(BaseModel):
 if __name__ == '__main__':
     from utils.config import process_config
     config = process_config('../configs/config.json')
-    model = OCRModel(config=config)
+    model = CTCModel(config=config)

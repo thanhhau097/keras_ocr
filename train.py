@@ -1,6 +1,6 @@
 import comet_ml
 from data_loader.ocr_data_loader import OCRDataLoader
-from models.ocr_model import OCRModel
+from models.ctc_model import CTCModel
 from models.attention_model import AttentionModel
 from models.joint_model import JointModel
 from trainers.ocr_trainer import OCRTrainer
@@ -29,7 +29,7 @@ def main():
     config.n_letters = build_vocab(config)
 
     print('Create the model.')
-    model = OCRModel(config)
+    model = CTCModel(config)
 
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')
