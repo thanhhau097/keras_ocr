@@ -5,7 +5,7 @@ from utils.gpu_utils import gru
 
 class AttentionDecoder(object):
     def __init__(self, config):
-        # used for attention: Bahdanau
+        # used for attention: luong_attention
         self.config = config
 
         latent_dim = 512
@@ -30,7 +30,7 @@ class AttentionDecoder(object):
         inputs = self.decoder_inputs
         for _ in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
-            attention_v = self.luong_dot_score_module(encoder_outputs, state)
+            attention_v = self.luong_general_attention(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
@@ -41,25 +41,25 @@ class AttentionDecoder(object):
         return decoder_outputs, self.decoder_inputs
 
     # TODO wrong: build from the previous hidden states
-    def bahdanau_score_module(self, encoder_outputs, state):  # Bahdanau
-        """
-        build from the previous hidden state ht−1 → at → ct → ht
-
-        :param encoder_outputs:
-        :param state:
-        :return:
-        """
-        hidden_state_with_time_axis = Lambda(lambda x: K.expand_dims(x, axis=1))(state)  # K.expand_dims(state, 1)
-        tanh_lambda = Lambda(lambda x: K.tanh(x))
-        score = Add()([tanh_lambda(self.W1(encoder_outputs)), self.W2(hidden_state_with_time_axis)])
-        score = self.V(score)
-        attention_weights = Softmax(axis=1)(score)
-        context_vector = Multiply()([attention_weights, encoder_outputs])
-        sum_lambda = Lambda(lambda x: K.sum(x, axis=1))
-        context_vector = sum_lambda(context_vector)
-        attention_vector = Concatenate(axis=-1)([context_vector, state])
-
-        return attention_vector
+    # def bahdanau_score_module(self, encoder_outputs, state):  # Bahdanau
+    #     """
+    #     build from the previous hidden state ht−1 → at → ct → ht
+    #
+    #     :param encoder_outputs:
+    #     :param state:
+    #     :return:
+    #     """
+    #     hidden_state_with_time_axis = Lambda(lambda x: K.expand_dims(x, axis=1))(state)  # K.expand_dims(state, 1)
+    #     tanh_lambda = Lambda(lambda x: K.tanh(x))
+    #     score = Add()([tanh_lambda(self.W1(encoder_outputs)), self.W2(hidden_state_with_time_axis)])
+    #     score = self.V(score)
+    #     attention_weights = Softmax(axis=1)(score)
+    #     context_vector = Multiply()([attention_weights, encoder_outputs])
+    #     sum_lambda = Lambda(lambda x: K.sum(x, axis=1))
+    #     context_vector = sum_lambda(context_vector)
+    #     attention_vector = Concatenate(axis=-1)([context_vector, state])
+    #
+    #     return attention_vector
 
     # TODO https://arxiv.org/pdf/1508.04025.pdf
     def luong_dot_score_module(self, encoder_outputs, state):
@@ -88,7 +88,7 @@ class AttentionDecoder(object):
         # print('encoder_outputs:', encoder_outputs)
         # difference here
         Wa_encoder_outputs = self.Wa(encoder_outputs)
-        attention = dot([state, encoder_outputs], axes=[1, 2])
+        attention = dot([state, Wa_encoder_outputs], axes=[1, 2])
         attention = Activation('softmax')(attention)
         # print('attention', attention)
 

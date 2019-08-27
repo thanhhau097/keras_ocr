@@ -21,7 +21,9 @@ class AttentionModel(BaseModel):
 
         # Make Network
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
-
+        max_text_len = self.config.hyperparameter.max_text_len
+        labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')
+        # we use labels here to use teacher forcing: ground truth label into input of decoder
         # ENCODER
         encoder = SimpleEncoder()
         inner, self.downsample_factor = encoder(inputs)
