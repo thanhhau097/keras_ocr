@@ -1,6 +1,6 @@
 from keras.layers import *
 from keras.layers.merge import add, concatenate
-
+from utils.gpu_utils import gru
 
 class SimpleDecoder():
     def __init__(self):
@@ -28,15 +28,15 @@ class SimpleDecoder():
 
         # Two layers of bidirectional GRUs
         # GRU seems to work as well, if not better than LSTM:
-        gru_1 = CuDNNGRU(256, return_sequences=True,
+        gru_1 = gru(256, return_sequences=True,
                     kernel_initializer='he_normal', name='gru1')(input_tensor)
-        gru_1b = CuDNNGRU(256, return_sequences=True,
+        gru_1b = gru(256, return_sequences=True,
                      go_backwards=True, kernel_initializer='he_normal',
                      name='gru1_b')(input_tensor)
         gru1_merged = add([gru_1, gru_1b])
-        gru_2 = CuDNNGRU(256, return_sequences=True,
+        gru_2 = gru(256, return_sequences=True,
                     kernel_initializer='he_normal', name='gru2')(gru1_merged)
-        gru_2b = CuDNNGRU(256, return_sequences=True, go_backwards=True,
+        gru_2b = gru(256, return_sequences=True, go_backwards=True,
                      kernel_initializer='he_normal', name='gru2_b')(gru1_merged)
 
         # transforms RNN output to character activations:

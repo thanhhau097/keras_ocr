@@ -25,11 +25,11 @@ def main():
 
     # type 'ctc' and type 'attention' (+2)
     print('Building vocabulary')
-    config.vocab_type = 'attention'
+    config.vocab_type = 'ctc'
     config.n_letters = build_vocab(config)
 
     print('Create the model.')
-    model = AttentionModel(config)
+    model = OCRModel(config)
 
     config.downsample_factor = model.get_downsample_factor()
     print('Create the data generator.')
