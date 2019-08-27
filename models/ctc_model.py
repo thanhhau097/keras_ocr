@@ -1,6 +1,7 @@
 from keras.layers import *
 from keras.models import Model
 from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
+from models.visual_encoders.simple_encoder import SimpleEncoder
 
 from base.base_model import BaseModel
 from models.decoders.simple_decoder import SimpleDecoder
@@ -20,7 +21,7 @@ class CTCModel(BaseModel):
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
 
         # ENCODER
-        encoder = MobileNetEncoder()
+        encoder = SimpleEncoder()
         inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 

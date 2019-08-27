@@ -6,8 +6,10 @@ from base.base_model import BaseModel
 from models.decoders.attention_decoder import AttentionDecoder
 from models.rnn_encoders.rnn_encoder import RNNEncoder
 from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
+from models.visual_encoders.simple_encoder import SimpleEncoder
 
 
+# TODO: apply teacher forcing
 class AttentionModel(BaseModel):
     def __init__(self, config):
         super(AttentionModel, self).__init__(config)
@@ -21,7 +23,7 @@ class AttentionModel(BaseModel):
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
 
         # ENCODER
-        encoder = MobileNetEncoder()
+        encoder = SimpleEncoder()
         inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 
