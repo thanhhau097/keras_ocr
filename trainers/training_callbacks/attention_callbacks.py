@@ -76,7 +76,7 @@ class AttentionCallback(keras.callbacks.Callback):
         output = np.clip(output, 1e-7, 1 - 1e-7)
         return np.sum(target * -np.log(output), axis=-1, keepdims=False)
 
-    def show_edit_distance(self, num):
+    def show_edit_distance(self, num, show_result=False):
         num_left = num
         mean_norm_ed = 0.0
         mean_ed = 0.0
@@ -104,6 +104,9 @@ class AttentionCallback(keras.callbacks.Callback):
                     mean_norm_ed += float(edit_dist)
                 if decoded_res[j] == source_str:
                     true_fields += 1
+                if show_result:
+                    print("Predict:", decoded_res[j], '\tLabel:', source_str)
+
 
             num_left -= num
         mean_norm_ed = mean_norm_ed / num
@@ -124,8 +127,9 @@ class AttentionCallback(keras.callbacks.Callback):
         total_acc_by_char = 0
 
         print("Evaluating Validation set ...")
-        for _ in tqdm(range(self.validation_steps)):
-            mean_norm_ed, mean_ed, loss_batch, true_fields, acc_by_char = self.show_edit_distance(self.batch_size)
+        for i in tqdm(range(self.validation_steps)):
+            mean_norm_ed, mean_ed, loss_batch,\
+                true_fields, acc_by_char = self.show_edit_distance(self.batch_size, i == (self.validation_steps - 1))
             total_mean_norm_ed += mean_norm_ed
             total_mean_ed += mean_ed
             total_loss += loss_batch
