@@ -1,6 +1,5 @@
 from keras.layers import *
 from keras.models import Model
-from keras.optimizers import Adam
 from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
 
 from base.base_model import BaseModel
@@ -65,10 +64,8 @@ class CTCModel(BaseModel):
         # else:
         #     return Model(inputs=[inputs], outputs=y_pred)
 
-        optimizer = Adam(decay=0.7)
-
         self.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred},
-                           optimizer=optimizer)
+                           optimizer=self.config.model.optimizer)
         self.model.summary()
 
     def get_downsample_factor(self):
