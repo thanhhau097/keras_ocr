@@ -32,7 +32,7 @@ class CTCCallback(keras.callbacks.Callback):
         # print(loss)
         return ret, loss
 
-    def show_edit_distance(self, num):
+    def show_edit_distance(self, num, show_result=False):
         num_left = num
         mean_norm_ed = 0.0
         mean_ed = 0.0
@@ -51,6 +51,8 @@ class CTCCallback(keras.callbacks.Callback):
                 mean_norm_ed += float(edit_dist) / len(source_str)
                 if decoded_res[j] == source_str:
                     true_fields += 1
+                if show_result:
+                    print("Predict:", decoded_res[j], '\tLabel:', source_str)
 
             num_left -= num
         mean_norm_ed = mean_norm_ed / num
@@ -69,8 +71,9 @@ class CTCCallback(keras.callbacks.Callback):
         total_true_fields = 0
 
         print("Evaluating Validation set ...")
-        for _ in tqdm(range(self.validation_steps)):
-            mean_norm_ed, mean_ed, loss_batch, true_fields = self.show_edit_distance(self.batch_size)
+        for i in tqdm(range(self.validation_steps)):
+            mean_norm_ed, mean_ed, loss_batch, true_fields = self.show_edit_distance(self.batch_size,
+                                                                                     i == (self.validation_steps - 1))
             total_mean_norm_ed += mean_norm_ed
             total_mean_ed += mean_ed
             total_loss += loss_batch
