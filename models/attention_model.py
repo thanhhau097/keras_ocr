@@ -1,11 +1,15 @@
-from utils.ocr_utils import ctc_lambda_func
-from base.base_model import BaseModel
-from keras.models import Model
 from keras.layers import *
-from models.encoders.mobilenet_encoder import MobileNetEncoder
+from keras.models import Model
+from keras.optimizers import Adam
+
+from base.base_model import BaseModel
 from models.decoders.attention_decoder import AttentionDecoder
+from models.rnn_encoders.rnn_encoder import RNNEncoder
+from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
+from models.visual_encoders.simple_encoder import SimpleEncoder
 
 
+# TODO: apply teacher forcing
 class AttentionModel(BaseModel):
     def __init__(self, config):
         super(AttentionModel, self).__init__(config)
@@ -17,9 +21,11 @@ class AttentionModel(BaseModel):
 
         # Make Network
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
-
+        max_text_len = self.config.hyperparameter.max_text_len
+        labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')
+        # we use labels here to use teacher forcing: ground truth label into input of decoder
         # ENCODER
-        encoder = MobileNetEncoder()
+        encoder = SimpleEncoder()
         inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 
@@ -32,9 +38,13 @@ class AttentionModel(BaseModel):
         # inner = TimeDistributed(Flatten(), name='timedistrib')(inner)
         print("After CNN to RNN:", inner)
 
+        # RNN Encoder
+        rnn_encoder = RNNEncoder(self.config)
+        encoder_outputs, state = rnn_encoder(inner)
+
         # DECODER
         decoder = AttentionDecoder(self.config)
-        inner, decoder_inputs = decoder(inner)
+        inner, decoder_inputs = decoder(encoder_outputs, state)
         print("After Decoder:", inner)
 
         y_pred = inner
@@ -42,7 +52,9 @@ class AttentionModel(BaseModel):
         # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
 
         self.model = Model([inputs, decoder_inputs], y_pred)
-        self.model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+        # https://arxiv.org/pdf/1904.08364.pdf
+        optimizer = Adam()  # 0.2, decay=0.5
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy')
         self.model.summary()
 
     def get_downsample_factor(self):

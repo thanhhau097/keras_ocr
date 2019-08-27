@@ -12,7 +12,7 @@ reverse_target_char_index = dict()
 
 def build_vocab(config):
     vocab_type = config.vocab_type
-    assert vocab_type in ['ctc', 'attention']
+    assert vocab_type in ['ctc', 'attention', 'joint']
     _, train_labels = get_image_paths_and_labels(get_data_path(config, config.data.train_json_path))
     _, val_labels = get_image_paths_and_labels(get_data_path(config, config.data.val_json_path))
     letters = set()
@@ -25,9 +25,9 @@ def build_vocab(config):
     if vocab_type == 'ctc':
         letters = ''.join(list(letters))
         print('Number of characters:', len(letters))
-    else:  # 'attention'
+    else:  # 'attention' and 'joint'
         letters = list(letters)
-        letters += ['\t', '\n'] # start and end token
+        letters += ['\t', '\n']  # start and end token
     update_vocab(letters)
     # with open('data/' + config.data.vocab_path, 'w') as f:
     #     json.dump({'characters': letters}, f)

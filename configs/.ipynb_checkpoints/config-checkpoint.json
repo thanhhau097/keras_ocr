@@ -14,8 +14,8 @@
   },
   "trainer": {
     "name": "ocr_trainer.OCRTrainer",
-    "num_epochs": 1000,
-    "batch_size": 10,
+    "num_epochs": 20,
+    "batch_size": 32,
     "verbose_training": true
   },
   "callbacks": {
@@ -27,7 +27,7 @@
     "tensorboard_write_graph": true
   },
   "data": {
-    "root": "data/sample_data/",
+    "root": "/opt/ml/input/data/train/data/Japanese/",
     "train_json_path": "train.json",
     "val_json_path": "val.json",
     "test_json_path": "test.json",

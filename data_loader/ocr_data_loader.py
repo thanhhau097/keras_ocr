@@ -29,36 +29,8 @@ class OCRDataLoader(object):
         else:
             raise(ValueError("Phase must be in {'train', 'val', 'test'}"))
 
-        self.image_paths, self.labels = self.get_image_paths_and_labels(data_json_path)
+        self.image_paths, self.labels = self.__get_image_paths_and_labels(data_json_path)
         self.n = len(self.image_paths)
-
-        # if phase == 'train':
-        #     self.build_vocab()
-        # elif phase == 'test': # no need val, because it is concurrent with train
-        #     self.load_vocab()
-        # print('Done initialization!')
-
-    # def build_vocab(self):
-    #     _, val_labels = self.get_image_paths_and_labels(self.get_data_path(self.config.data.val_json_path))
-    #     letters = set()
-    #     # add letters not in vocab files
-    #     for label in (self.labels + val_labels):
-    #         for char in label:
-    #             if char not in letters:
-    #                 letters.add(char)
-    #
-    #     letters = ''.join(list(letters))
-    #     print('Number of characters:', len(letters))
-    #     update_vocab(letters)
-    #
-    #     with open(self.config.data.vocab_path, 'w') as f:
-    #         json.dump({'characters': letters}, f)
-    #
-    # def load_vocab(self):
-    #     with open(self.config.data.vocab_path, 'r', encoding='utf-8') as f:
-    #         data = json.load(f)
-    #         update_vocab(data['characters'])
-
 
     def get_steps(self):
         return self.n // self.batch_size
@@ -66,7 +38,7 @@ class OCRDataLoader(object):
     def get_data_path(self, path):
         return os.path.join(self.config.data.root, path)
 
-    def get_image_paths_and_labels(self, json_path):
+    def __get_image_paths_and_labels(self, json_path):
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
@@ -81,7 +53,10 @@ class OCRDataLoader(object):
         """
         shape = image.shape
         if shape[0] > 64 or shape[0] < 32: # height
-            image = cv2.resize(image, (int(64/shape[0] * shape[1]), 64))
+            try:
+                image = cv2.resize(image, (int(64/shape[0] * shape[1]), 64))
+            except:
+                return np.zeros([1, 1, self.channels])
         return image / 255.0
 
     def next_sample(self):
@@ -129,7 +104,6 @@ class OCRDataLoader(object):
                 images = self.process_batch_images(images, max_width)
                 images = np.transpose(images, [0, 2, 1, 3])
 
-                # TODO ctc and attention
                 if self.config.vocab_type == 'ctc':
                     input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
 
@@ -143,7 +117,7 @@ class OCRDataLoader(object):
                     # print("images shape:", images.shape, "input_length:", list(input_length))
 
                     yield (inputs, outputs)
-                else:
+                elif self.config.vocab_type == 'attention':
                     # for attention, we need decoder inputs: it is a constant value representing \t: start of sentence
                     # print(self.config.n_letters)
                     # print(self.config)
@@ -154,7 +128,8 @@ class OCRDataLoader(object):
                         'the_input': images,
                         'decoder_input': decoder_input_data,
                     }
-                    # TODO dont use one-hot encoder here because token 0 will be encode
+
+                    # dont use one-hot encoder here because token 0 will be encode
                     # encode one hot to label_length and the follow part all are 0
                     outputs = np.zeros([self.batch_size, self.max_text_len, self.config.n_letters])
 
@@ -166,16 +141,35 @@ class OCRDataLoader(object):
 
                     # outputs = self.onehot_initialization(labels, self.config.n_letters)
                     yield (inputs, outputs)
+                else:  # joint: we need to return both output of CTC and attention
+                    # TODO consider label_length here, because there is mix type, then label += '\n'
+                    new_label_length = np.zeros((self.batch_size, 1))
+                    for k, label_l in enumerate(label_length):
+                        if label_l == 1:
+                            new_label_length[k] = label_length - 1
+                    input_length = np.ones((self.batch_size, 1)) * (max_width // self.config.downsample_factor - 2)
 
-    # def onehot_initialization(self, a, ncols):
-    #     out = np.zeros(a.shape + (ncols,), dtype=int)
-    #     out[self.all_idx(a, axis=2)] = 1
-    #     return out
-    #
-    # def all_idx(self, idx, axis):
-    #     grid = np.ogrid[tuple(map(slice, idx.shape))]
-    #     grid.insert(axis, idx)
-    #     return tuple(grid)
+                    decoder_input_data = np.zeros([self.batch_size, 1, int(self.config.n_letters)])
+                    decoder_input_data[:, 0, get_input_token_index()['\t']] = 1.
+
+                    outputs_attention = np.zeros([self.batch_size, self.max_text_len, self.config.n_letters])
+
+                    for k, label in enumerate(labels):
+                        for ci, c in enumerate(label):
+                            outputs_attention[k, ci, c] = 1.
+                            if c == self.config.n_letters - 1:
+                                break
+
+                    inputs = {
+                        'the_input': images,  # (bs, w, h, 1)
+                        'the_labels': labels,  # (bs, 8)
+                        'input_length': input_length,  # (bs, 1)
+                        'label_length': label_length,  # (bs, 1)
+                        'decoder_input': decoder_input_data,
+                    }
+                    outputs = {'ctc': np.zeros([self.batch_size]), 'attention': outputs_attention}
+
+                    yield (inputs, outputs)
 
     def process_batch_images(self, images, max_width):
         """Apply augmentations"""
@@ -187,9 +181,6 @@ class OCRDataLoader(object):
                     len(self.good_policies))]
                 final_img = augmentions.apply_policy(
                     epoch_policy, final_img)
-                # final_img = augmentions.random_flip(
-                #     augmentions.zero_pad_and_crop(final_img, 4))
-                # Apply cutout
                 final_img = augmentions.cutout_numpy(final_img)
 
             shape = image.shape

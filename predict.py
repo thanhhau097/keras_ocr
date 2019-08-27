@@ -3,7 +3,7 @@ import cv2
 import json
 import tensorflow as tf
 
-from models.ocr_model import OCRModel
+from models.ctc_model import CTCModel
 from utils.config import process_config
 from utils.ocr_utils import decode_batch
 from utils.ocr_utils import update_vocab
@@ -31,7 +31,7 @@ class LionelOCR(object):
         self.weights = weights_path
         self.config = process_config(config_path)
         self._load_vocab()
-        self.model = OCRModel(self.config)
+        self.model = CTCModel(self.config)
         self.model.load(self.weights)
 
     def _load_vocab(self):

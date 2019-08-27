@@ -1,15 +1,16 @@
-from utils.ocr_utils import ctc_lambda_func
-from base.base_model import BaseModel
-from keras.models import Model
 from keras.layers import *
-from models.encoders.simple_encoder import SimpleEncoder
-from models.encoders.mobilenet_encoder import MobileNetEncoder
+from keras.models import Model
+from models.visual_encoders.mobilenet_encoder import MobileNetEncoder
+from models.visual_encoders.simple_encoder import SimpleEncoder
+
+from base.base_model import BaseModel
 from models.decoders.simple_decoder import SimpleDecoder
+from utils.ocr_utils import ctc_lambda_func
 
 
-class OCRModel(BaseModel):
+class CTCModel(BaseModel):
     def __init__(self, config):
-        super(OCRModel, self).__init__(config)
+        super(CTCModel, self).__init__(config)
         self.config = config
         self.build_model()
 
@@ -20,7 +21,7 @@ class OCRModel(BaseModel):
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
 
         # ENCODER
-        encoder = MobileNetEncoder()
+        encoder = SimpleEncoder()
         inner, self.downsample_factor = encoder(inputs)
         print("After Encoder:", inner)
 
@@ -65,7 +66,7 @@ class OCRModel(BaseModel):
         #     return Model(inputs=[inputs], outputs=y_pred)
 
         self.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred},
-                      optimizer=self.config.model.optimizer)
+                           optimizer=self.config.model.optimizer)
         self.model.summary()
 
     def get_downsample_factor(self):
@@ -75,4 +76,4 @@ class OCRModel(BaseModel):
 if __name__ == '__main__':
     from utils.config import process_config
     config = process_config('../configs/config.json')
-    model = OCRModel(config=config)
+    model = CTCModel(config=config)
