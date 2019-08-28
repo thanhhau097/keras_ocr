@@ -22,7 +22,11 @@ class AttentionModel(BaseModel):
         # Make Network
         inputs = Input(name='the_input', shape=input_shape, dtype='float32')  # (None, 128, 64, 1)
         max_text_len = self.config.hyperparameter.max_text_len
-        labels = Input(name='the_labels', shape=[max_text_len], dtype='float32')
+        onehot_label = Input(name='onehot_label',
+                             shape=[None,
+                                    max_text_len,
+                                    self.config.n_letters],
+                             dtype='float32')
         # we use labels here to use teacher forcing: ground truth label into input of decoder
         # ENCODER
         encoder = SimpleEncoder()
@@ -44,14 +48,14 @@ class AttentionModel(BaseModel):
 
         # DECODER
         decoder = AttentionDecoder(self.config)
-        inner, decoder_inputs = decoder(encoder_outputs, state)
+        inner, decoder_inputs = decoder(encoder_outputs, state, onehot_label)
         print("After Decoder:", inner)
 
         y_pred = inner
         # self.test_func = K.function([inputs, decoder_inputs], [y_pred])
         # self.pred_func = K.function([inputs, decoder_inputs], [y_pred])
 
-        self.model = Model([inputs, decoder_inputs], y_pred)
+        self.model = Model([inputs, decoder_inputs, onehot_label], y_pred)
         # https://arxiv.org/pdf/1904.08364.pdf
         optimizer = Adam()  # 0.2, decay=0.5
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy')

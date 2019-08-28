@@ -24,17 +24,25 @@ class AttentionDecoder(object):
         self.decoder_gru = gru(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
         self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
 
-    def __call__(self, encoder_outputs, state, *args, **kwargs):
+    def __call__(self, encoder_outputs, state, onehot_label, *args, **kwargs):
         # Apply Attention
         all_outputs = []
         inputs = self.decoder_inputs
-        for _ in range(self.max_decoder_seq_length):
+        for i in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
             attention_v = self.luong_dot_score_module(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
             inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
             all_outputs.append(inputs)
+
+            # apply teacher forcing here, but how can we get the current epoch?
+            if True:
+                add_lambda = Lambda(lambda x: x[i])
+                # in theory, we replace inputs by onehot label[i], but the graph is not fixed,
+                # so we need to combine inputs and onehot label by some ways.
+                inputs = add_lambda(onehot_label)  # Add()([inputs, onehot_label[i]])
+
         decoder_outputs = Concatenate(axis=1, name='attention')(all_outputs)
 
         print("DECODER_OUTPUTS: ", decoder_outputs)
