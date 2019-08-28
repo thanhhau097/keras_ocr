@@ -137,7 +137,8 @@ class OCRDataLoader(object):
                     inputs = {
                         'the_input': images,
                         'decoder_input': decoder_input_data,
-                        'onehot_label': outputs
+                        'onehot_label': outputs,
+                        'is_training': self.phase == 'train'
                     }
 
                     yield (inputs, outputs)

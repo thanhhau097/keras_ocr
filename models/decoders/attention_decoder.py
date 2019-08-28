@@ -1,6 +1,7 @@
 from keras.layers import *
 from keras.layers.merge import add, concatenate, dot
 from utils.gpu_utils import gru
+from keras import backend as K
 
 
 class AttentionDecoder(object):
@@ -24,7 +25,7 @@ class AttentionDecoder(object):
         self.decoder_gru = gru(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
         self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
 
-    def __call__(self, encoder_outputs, state, onehot_label, *args, **kwargs):
+    def __call__(self, encoder_outputs, state, onehot_label, is_training, *args, **kwargs):
         # Apply Attention
         all_outputs = []
         inputs = self.decoder_inputs
@@ -37,11 +38,19 @@ class AttentionDecoder(object):
             all_outputs.append(inputs)
 
             # apply teacher forcing here, but how can we get the current epoch?
-            if True:
-                add_lambda = Lambda(lambda x: x[i])
-                # in theory, we replace inputs by onehot label[i], but the graph is not fixed,
-                # so we need to combine inputs and onehot label by some ways.
-                inputs = add_lambda(onehot_label)  # Add()([inputs, onehot_label[i]])
+            # when training, we apply teacher forcing, but when testing, we dont, so, how can
+            # we handle this problem
+            # if True:
+            # print('onehot_label', onehot_label)
+            teacher_forcing_lambda = Lambda(lambda x: x[:, i:i+1])
+            step_label = teacher_forcing_lambda(onehot_label)
+            # print('step_label:', step_label)
+            switch_lambda = Lambda(lambda x: K.switch(x[0], x[1], x[2]))
+            inputs = switch_lambda([is_training, step_label, inputs])
+
+            # in theory, we replace inputs by onehot label[i], but the graph is not fixed,
+            # so we need to combine inputs and onehot label by some ways.
+            # inputs = add_lambda(onehot_label)  # Add()([inputs, onehot_label[i]])
 
         decoder_outputs = Concatenate(axis=1, name='attention')(all_outputs)
 
