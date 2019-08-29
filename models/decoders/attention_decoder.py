@@ -23,7 +23,8 @@ class AttentionDecoder(object):
         # Set up the decoder, using `encoder_states` as initial state.
         self.decoder_inputs = Input(shape=(1, num_decoder_tokens), name='decoder_input')
         self.decoder_gru = gru(latent_dim, return_sequences=True, return_state=True, name='decoder_gru')
-        self.decoder_dense = Dense(num_decoder_tokens, activation='softmax')
+        self.decoder_dense_1 = Dense(latent_dim, activation='tanh')
+        self.decoder_dense_2 = Dense(num_decoder_tokens, activation='softmax')
 
     def __call__(self, encoder_outputs, state, onehot_label, is_training, *args, **kwargs):
         # Apply Attention
@@ -32,7 +33,8 @@ class AttentionDecoder(object):
         for i in range(self.max_decoder_seq_length):
             _, state = self.decoder_gru(inputs, initial_state=state)
             attention_v = self.luong_dot_score_module(encoder_outputs, state)
-            outputs = self.decoder_dense(attention_v)
+            outputs = self.decoder_dense_1(attention_v)
+            outputs = self.decoder_dense_2(outputs)
 
             outputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
             all_outputs.append(outputs)
