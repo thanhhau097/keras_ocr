@@ -45,19 +45,19 @@ class OCRTrainer(BaseTrain):
             self.callbacks.append(
                 CTCCallback(self.model.test_func, self.config.letters,
                             self.config.validation_steps, self.config.trainer.batch_size,
-                            self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+                            self.val_data.next_batch(), filepath='/opt/ml/model/model.h5')
             )
         elif self.config.vocab_type == 'attention':
             self.callbacks.append(
                 AttentionCallback(self.config.letters,
                                   self.config.validation_steps, self.config.trainer.batch_size,
-                                  self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+                                  self.val_data.next_batch(), filepath='/opt/ml/model/model.h5')
             )
         else:
             self.callbacks.append(
                 JointCallback(self.model.test_func, self.config.letters,
                               self.config.validation_steps, self.config.trainer.batch_size,
-                              self.val_data.next_batch(), filepath='/opt/ml/output/model.h5')
+                              self.val_data.next_batch(), filepath='/opt/ml/model/model.h5')
             )
 
         # if hasattr(self.config,"comet_api_key"):
