@@ -34,23 +34,19 @@ class AttentionDecoder(object):
             attention_v = self.luong_dot_score_module(encoder_outputs, state)
             outputs = self.decoder_dense(attention_v)
 
-            inputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
-            all_outputs.append(inputs)
+            outputs = Lambda(lambda x: K.expand_dims(x, axis=1))(outputs)
+            all_outputs.append(outputs)
 
             # apply teacher forcing here, but how can we get the current epoch?
             # when training, we apply teacher forcing, but when testing, we dont, so, how can
             # we handle this problem
-            # if True:
-            # print('onehot_label', onehot_label)
             teacher_forcing_lambda = Lambda(lambda x: x[:, i:i+1])
             step_label = teacher_forcing_lambda(onehot_label)
-            # print('step_label:', step_label)
             switch_lambda = Lambda(lambda x: K.switch(x[0], x[1], x[2]))
-            inputs = switch_lambda([is_training, step_label, inputs])
+            inputs = switch_lambda([is_training, step_label, outputs])
 
             # in theory, we replace inputs by onehot label[i], but the graph is not fixed,
             # so we need to combine inputs and onehot label by some ways.
-            # inputs = add_lambda(onehot_label)  # Add()([inputs, onehot_label[i]])
 
         decoder_outputs = Concatenate(axis=1, name='attention')(all_outputs)
 
